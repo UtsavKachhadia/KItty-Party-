@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Sign in to Agentic MCP Gateway — Natural language workflow automation." />
+  <title>Sign In — MCP Gateway</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; width: 100%; overflow: hidden; }
+    body { font-family: 'Inter', system-ui, sans-serif; font-size: 13px; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #414755; border-radius: 2px; }
+
+    /* 0.5px borders — enforced via box-shadow trick for sub-pixel precision */
+    .border-half { border: 0.5px solid #414755; }
+    .border-half-error { border: 0.5px solid #DC3545; }
+    .border-half-primary { border: 0.5px solid #007AFF; }
+
+    /* Terminal cursor blink */
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+    .cursor-blink { animation: blink 1s step-end infinite; }
+
+    /* Button press */
+    .btn-press { transition: transform 80ms ease, opacity 120ms ease; }
+    .btn-press:active { transform: scale(0.98); }
+
+    /* Input focus transition */
+    .input-focus { transition: border-color 120ms ease; }
+    .input-focus:focus { border-color: #007AFF !important; outline: none; }
+
+    /* Spinner */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner { animation: spin 0.7s linear infinite; }
+
+    /* Selection */
+    ::selection { background: rgba(0, 122, 255, 0.3); color: #E5E2E1; }
+
+    /* Custom checkbox */
+    .cb-custom { appearance: none; -webkit-appearance: none; width: 12px; height: 12px; border: 0.5px solid #414755; border-radius: 3px; background: #0E0E0E; cursor: pointer; position: relative; flex-shrink: 0; }
+    .cb-custom:checked { background: #007AFF; border-color: #007AFF; }
+    .cb-custom:checked::after {
+      content: '';
+      position: absolute;
+      left: 3px; top: 1px;
+      width: 4px; height: 7px;
+      border: solid #fff;
+      border-width: 0 1.5px 1.5px 0;
+      transform: rotate(45deg);
+    }
+  </style>
+</head>
+<body style="background:#131313; color:#E5E2E1;">
+
+  <div class="flex h-screen w-screen">
+
+    <!-- ═══ LEFT PANEL — Brand / Terminal ═══ -->
+    <div class="hidden md:flex flex-col justify-between w-[60%] h-full p-12" style="background:#1C1B1B;">
+
+      <!-- Brand block (vertically centered) -->
+      <div class="flex-1 flex flex-col justify-center">
+        <!-- Brand lockup -->
+        <p class="text-[11px] font-bold uppercase tracking-[0.2em]" style="color:#6C757D;">MCP Gateway</p>
+        <h1 class="text-[36px] font-bold leading-tight mt-2" style="color:#E5E2E1;">
+          Agentic workflow<br/>execution.
+        </h1>
+
+        <!-- Terminal block -->
+        <div class="mt-6 rounded-lg p-4 font-mono text-[11px] leading-relaxed border-half" style="background:#0E0E0E;">
+          <p style="color:#6C757D;">&gt; Initializing MCP runtime...</p>
+          <p style="color:#28A745;">✓ GitHub connector: ACTIVE</p>
+          <p style="color:#28A745;">✓ Slack connector: ACTIVE</p>
+          <p style="color:#FFBF00;">⚠ Jira connector: CHECKING</p>
+          <p style="color:#6C757D;">&gt; Loading workflow engine...</p>
+          <p style="color:#6C757D;">&gt; Awaiting authentication...<span class="cursor-blink ml-0.5" style="color:#007AFF;">█</span></p>
+        </div>
+      </div>
+
+      <!-- Version tag -->
+      <p class="text-[10px]" style="color:#6C757D;">v1.0.4-stable</p>
+    </div>
+
+    <!-- ═══ RIGHT PANEL — Login Form ═══ -->
+    <div class="flex-1 flex items-center justify-center px-6 md:px-12" style="background:#131313;">
+      <div class="w-full max-w-[400px]">
+
+        <!-- Header -->
+        <p class="text-[11px] font-bold uppercase tracking-[0.2em]" style="color:#6C757D;">MCP Gateway</p>
+        <h2 class="text-[16px] font-bold mt-2" style="color:#E5E2E1;">Sign in to continue</h2>
+
+        <!-- Form -->
+        <form id="loginForm" class="mt-8" onsubmit="handleLogin(event)">
+
+          <!-- Email -->
+          <div>
+            <label class="block text-[11px] uppercase tracking-wider font-semibold mb-1.5" style="color:#C1C6D7;">
+              Workspace Email
+            </label>
+            <input
+              type="email"
+              id="emailInput"
+              placeholder="you@company.com"
+              class="w-full h-[36px] rounded-lg px-3 text-[13px] font-sans input-focus border-half-error"
+              style="background:#0E0E0E; color:#E5E2E1;"
+              autocomplete="email"
+            />
+            <!-- Error (shown by default for visual completeness) -->
+            <p id="emailError" class="mt-1.5 text-[11px] flex items-center gap-1" style="color:#DC3545;">
+              <span>✗</span> Invalid credentials. Check your email and try again.
+            </p>
+          </div>
+
+          <!-- Password -->
+          <div class="mt-4">
+            <div class="flex items-center justify-between mb-1.5">
+              <label class="text-[11px] uppercase tracking-wider font-semibold" style="color:#C1C6D7;">
+                Password
+              </label>
+              <a href="#" class="text-[11px] hover:underline" style="color:#007AFF;" tabindex="0">
+                Forgot password?
+              </a>
+            </div>
+            <input
+              type="password"
+              id="passwordInput"
+              placeholder="••••••••••••"
+              class="w-full h-[36px] rounded-lg px-3 text-[13px] font-sans input-focus border-half"
+              style="background:#0E0E0E; color:#E5E2E1;"
+              autocomplete="current-password"
+            />
+          </div>
+
+          <!-- Remember me -->
+          <div class="mt-3 flex items-center gap-2">
+            <input type="checkbox" class="cb-custom" id="rememberMe" />
+            <label for="rememberMe" class="text-[11px] cursor-pointer select-none" style="color:#C1C6D7;">
+              Keep me signed in
+            </label>
+          </div>
+
+          <!-- Sign in button -->
+          <button
+            type="submit"
+            id="signInBtn"
+            class="w-full h-[36px] rounded-lg font-bold text-[13px] mt-6 btn-press flex items-center justify-center"
+            style="background:#007AFF; color:#F9F9F9; border:none;"
+            onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'"
+          >
+            <span id="btnText">Sign In</span>
+            <svg id="btnSpinner" class="spinner hidden" width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" stroke="#F9F9F9" stroke-width="2" stroke-linecap="round" stroke-dasharray="15.7 47.1" />
+            </svg>
+          </button>
+        </form>
+
+        <!-- Divider -->
+        <div class="relative mt-6 mb-4">
+          <div class="absolute inset-0 flex items-center">
+            <div class="w-full" style="border-top:0.5px solid #414755;"></div>
+          </div>
+          <div class="relative flex justify-center">
+            <span class="px-2 text-[11px] uppercase" style="background:#131313; color:#6C757D;">Or continue with</span>
+          </div>
+        </div>
+
+        <!-- SSO button -->
+        <button
+          class="w-full h-[36px] rounded-lg text-[13px] font-sans border-half btn-press flex items-center justify-center"
+          style="background:transparent; color:#E5E2E1;"
+          onmouseover="this.style.background='#2A2A2A'" onmouseout="this.style.background='transparent'"
+        >
+          Continue with SSO
+        </button>
+
+        <!-- Footer -->
+        <div class="mt-8">
+          <p class="text-[11px]" style="color:#6C757D;">
+            Don't have an account?
+            <a href="#" class="hover:underline" style="color:#007AFF;">Request access</a>
+          </p>
+          <p class="text-[10px] mt-2" style="color:#414755;">
+            Tokens stored in secure enclave. Not transmitted.
+          </p>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    function handleLogin(e) {
+      e.preventDefault();
+      const btn = document.getElementById('signInBtn');
+      const btnText = document.getElementById('btnText');
+      const spinner = document.getElementById('btnSpinner');
+      const emailInput = document.getElementById('emailInput');
+      const passwordInput = document.getElementById('passwordInput');
+      const emailError = document.getElementById('emailError');
+
+      // Set loading state
+      btn.disabled = true;
+      btn.style.opacity = '0.7';
+      btn.style.cursor = 'not-allowed';
+      btnText.classList.add('hidden');
+      spinner.classList.remove('hidden');
+      emailInput.disabled = true;
+      passwordInput.disabled = true;
+      emailInput.style.opacity = '0.5';
+      passwordInput.style.opacity = '0.5';
+
+      // Hide error during attempt
+      emailError.style.display = 'none';
+      emailInput.classList.remove('border-half-error');
+      emailInput.classList.add('border-half');
+
+      // Simulate 2s auth then reset
+      setTimeout(function() {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        btn.style.cursor = 'pointer';
+        btnText.classList.remove('hidden');
+        spinner.classList.add('hidden');
+        emailInput.disabled = false;
+        passwordInput.disabled = false;
+        emailInput.style.opacity = '1';
+        passwordInput.style.opacity = '1';
+
+        // Show error state again
+        emailError.style.display = 'flex';
+        emailInput.classList.remove('border-half');
+        emailInput.classList.add('border-half-error');
+      }, 2000);
+    }
+  </script>
+
+</body>
+</html>
