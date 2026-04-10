@@ -1,0 +1,32 @@
+{
+  "name": "agentic-mcp-gateway-backend",
+  "version": "1.0.0",
+  "description": "Agentic MCP Gateway — Natural language workflow automation with LLM-planned DAG execution",
+  "type": "module",
+  "main": "backend/src/server.js",
+  "scripts": {
+    "start": "node backend/src/server.js",
+    "dev": "nodemon backend/src/server.js",
+    "test": "echo \"No tests configured yet\" && exit 0"
+  },
+  "dependencies": {
+    "@octokit/rest": "^21.0.0",
+    "@slack/web-api": "^7.0.0",
+    "axios": "^1.7.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.0",
+    "express": "^4.21.0",
+    "groq-sdk": "^0.5.0",
+    "mongoose": "^8.4.0",
+    "morgan": "^1.10.0",
+    "socket.io": "^4.7.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": ["mcp", "workflow", "automation", "llm", "agentic"],
+  "license": "MIT"
+}
