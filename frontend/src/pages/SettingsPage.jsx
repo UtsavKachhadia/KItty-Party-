@@ -38,7 +38,22 @@ export default function SettingsPage() {
   useEffect(() => {
     api
       .get('/connectors/health')
-      .then((res) => setHealth(res.data))
+      .then((res) => {
+        setHealth(res.data);
+        
+        // Pre-populate formData with masked tokens/domains for already configured connectors
+        const savedData = {};
+        Object.entries(res.data).forEach(([key, info]) => {
+          if (info.configured) {
+            if (key === 'github' || key === 'slack') {
+              savedData[key] = { token: info.maskedToken };
+            } else if (key === 'jira') {
+              savedData[key] = { apiKey: info.maskedToken, domain: info.domain };
+            }
+          }
+        });
+        setFormData(savedData);
+      })
       .catch(() => setHealth({}));
   }, []);
 

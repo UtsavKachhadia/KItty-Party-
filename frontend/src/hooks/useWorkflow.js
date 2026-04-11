@@ -39,7 +39,7 @@ export default function useWorkflow() {
       return data;
     } catch (err) {
       setStatus('failed');
-      const msg = err.response?.data?.error || err.message;
+      const msg = err.response?.data?.message || err.message;
       appendConsoleLog(`✗ Planning failed: ${msg}`);
       throw err;
     }
@@ -56,8 +56,44 @@ export default function useWorkflow() {
     }
   };
 
+  const loadRunHistory = async (runId) => {
+    try {
+      // 1. Switch to workflow page and reset UI
+      useUIStore.getState().setActivePage('workflow');
+      clearDAG();
+      clearConsoleLogs();
+      
+      // 2. Fetch full run details
+      const { data: runRes } = await api.get(`/workflow/run/${runId}`);
+      const run = runRes.run;
+
+      // 3. Hydrate state
+      setPrompt(run.userInput);
+      startWorkflow(run._id, run.dag, run.steps);
+      setDAG(run.steps);
+      setStatus(run.status);
+
+      appendConsoleLog(`↺ Loading history for: "${run.userInput}"`);
+      appendConsoleLog(`  Run ID: ${runId}`);
+      appendConsoleLog(`  Status: ${run.status.toUpperCase()}`);
+
+      // 4. Fetch and display actual audit logs
+      const { data: auditRes } = await api.get(`/audit/${runId}`);
+      if (auditRes.logs) {
+        auditRes.logs.forEach(log => {
+          const icon = log.success ? '✓' : '✗';
+          appendConsoleLog(`${icon} [${log.connector}.${log.action}] ${log.success ? 'Success' : 'Failed'}`);
+          if (!log.success) appendConsoleLog(`  Error: ${log.errorMessage}`);
+        });
+      }
+    } catch (err) {
+      console.error('Failed to load history:', err);
+      appendConsoleLog('✗ Failed to load run history');
+    }
+  };
+
   const canSubmit =
     status === 'idle' || status === 'completed' || status === 'failed';
 
-  return { prompt, setPrompt, submitWorkflow, fetchHistory, reset, canSubmit, status };
+  return { prompt, setPrompt, submitWorkflow, fetchHistory, loadRunHistory, reset, canSubmit, status };
 }

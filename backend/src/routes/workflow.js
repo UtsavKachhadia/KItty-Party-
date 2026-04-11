@@ -114,4 +114,26 @@ router.get('/history', requireAuth, async (req, res, next) => {
   }
 });
 
+/**
+ * GET /api/workflow/run/:runId
+ * Returns the full Run document for a specific runId, ensuring it belongs to the user.
+ */
+router.get('/run/:runId', requireAuth, async (req, res, next) => {
+  try {
+    const { runId } = req.params;
+    const run = await Run.findOne({ _id: runId, userId: req.user.userId }).lean();
+
+    if (!run) {
+      return res.status(404).json({
+        success: false,
+        message: 'Run not found or access denied.',
+      });
+    }
+
+    return res.json({ success: true, run });
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;

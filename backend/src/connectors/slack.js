@@ -13,32 +13,46 @@ function getSlackClient(context) {
   return new WebClient(token);
 }
 
+/**
+ * Internal helper to resolve a channel name to an ID if needed.
+ */
+async function resolveChannelId(web, channel) {
+  if (!channel) return channel;
+  // If looks like an ID (starts with C, D, or G followed by 8+ alphanumeric), use it directly
+  if (/^[CDG][A-Z0-9]{8,}$/.test(channel)) return channel;
+
+  const cleanName = channel.replace(/^#/, '');
+  const res = await web.conversations.list({ types: 'public_channel,private_channel', limit: 500 });
+  const ch = (res.channels || []).find(
+    (c) => c.name === cleanName || c.name_normalized === cleanName
+  );
+  return ch ? ch.id : channel;
+}
+
 const handlers = {
   async getAuthInfo(web) {
     return await web.auth.test();
   },
 
   async postMessage(web, { channel, text, blocks }) {
-    const args = { channel, text };
+    const channelId = await resolveChannelId(web, channel);
+    const args = { channel: channelId, text };
     if (blocks) args.blocks = blocks;
     const res = await web.chat.postMessage(args);
     return { ts: res.ts, channel: res.channel };
   },
 
   async mentionUser(web, { channel, userId, text }) {
+    const channelId = await resolveChannelId(web, channel);
     const mentionText = `<@${userId}> ${text}`;
-    const res = await web.chat.postMessage({ channel, text: mentionText });
+    const res = await web.chat.postMessage({ channel: channelId, text: mentionText });
     return { ts: res.ts, channel: res.channel };
   },
 
   async lookupChannel(web, { name }) {
-    const cleanName = name.replace(/^#/, '');
-    const res = await web.conversations.list({ types: 'public_channel,private_channel', limit: 200 });
-    const ch = (res.channels || []).find(
-      (c) => c.name === cleanName || c.name_normalized === cleanName
-    );
-    if (!ch) throw new Error(`Channel "${name}" not found`);
-    return { channelId: ch.id, name: ch.name };
+    const chId = await resolveChannelId(web, name);
+    if (!/^[CDG]/.test(chId)) throw new Error(`Channel "${name}" not found in this workspace.`);
+    return { channelId: chId, name };
   },
 
   async getUser(web, { email }) {

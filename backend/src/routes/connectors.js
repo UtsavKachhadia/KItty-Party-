@@ -19,6 +19,19 @@ router.get('/health', async (req, res, next) => {
   try {
     const userTokens = await getUserTokens(req.user.userId);
     const health = getConnectorHealth({ email: req.user.email, tokens: userTokens });
+
+    // Enrich with masked tokens/domains for the settings UI
+    if (userTokens.github) {
+      health.github.maskedToken = `ghp_********************${userTokens.github.slice(-4)}`;
+    }
+    if (userTokens.slack) {
+      health.slack.maskedToken = `xoxb-********************${userTokens.slack.slice(-4)}`;
+    }
+    if (userTokens.jiraKey) {
+      health.jira.maskedToken = `************************${userTokens.jiraKey.slice(-4)}`;
+      health.jira.domain = userTokens.jiraDomain;
+    }
+
     return res.json(health);
   } catch (err) {
     next(err);

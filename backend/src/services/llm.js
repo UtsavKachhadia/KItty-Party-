@@ -54,7 +54,9 @@ export async function planWorkflow(userInput) {
     return dag;
   } catch (err) {
     if (err.response?.status === 429) {
-      throw new Error('Groq rate limit exceeded — retry later');
+      const rateLimitErr = new Error('Groq rate limit exceeded — please wait a few seconds before retrying.');
+      rateLimitErr.status = 429;
+      throw rateLimitErr;
     }
     throw new Error(`LLM planning failed: ${err.message}`);
   }

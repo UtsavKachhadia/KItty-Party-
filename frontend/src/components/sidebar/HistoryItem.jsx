@@ -1,8 +1,12 @@
+import useWorkflow from '../../hooks/useWorkflow';
+
 /**
  * Past workflow run summary row in sidebar.
  * @param {{ run: { runId: string, userInput: string, status: string, stepsTotal: number, stepsCompleted: number } }} props
  */
 export default function HistoryItem({ run }) {
+  const { loadRunHistory } = useWorkflow();
+
   const dotColor = {
     completed: 'bg-success',
     failed: 'bg-error',
@@ -19,6 +23,7 @@ export default function HistoryItem({ run }) {
 
   return (
     <div
+      onClick={() => loadRunHistory(run.runId)}
       className="flex items-start gap-2 px-3 py-1.5 rounded-lg cursor-pointer hover:bg-surface-container-highest transition-colors group"
       title={run.userInput}
     >
