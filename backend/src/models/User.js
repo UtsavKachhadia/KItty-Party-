@@ -7,6 +7,7 @@ const userSchema = new mongoose.Schema({
     unique: true,
     index: true,
     trim: true,
+    lowercase: true,
   },
   email: {
     type: String,
@@ -31,20 +32,20 @@ const userSchema = new mongoose.Schema({
   },
   integrations: {
     github: {
-      accessToken: String,
-      encryptedToken: String,
-      connectedAt: Date,
+      accessToken:    { type: String, select: false },
+      encryptedToken: { type: String, select: false },
+      connectedAt:    Date,
     },
     slack: {
-      accessToken: String,
-      encryptedToken: String,
-      botToken: String,
-      connectedAt: Date,
+      accessToken:    { type: String, select: false },
+      encryptedToken: { type: String, select: false },
+      botToken:       { type: String, select: false },
+      connectedAt:    Date,
     },
     jira: {
-      domain: String,
-      email: String,
-      apiToken: String, // encrypted
+      domain:      String,
+      email:       String,
+      apiToken:    { type: String, select: false }, // encrypted
       connectedAt: Date,
     },
   },
@@ -55,6 +56,10 @@ const userSchema = new mongoose.Schema({
       default: 'SELF',
     },
   },
+  isPlaceholder: {
+    type: Boolean,
+    default: false,
+  },
   createdAt: {
     type: Date,
     default: Date.now,
@@ -64,6 +69,18 @@ const userSchema = new mongoose.Schema({
     default: null,
   },
 }, { timestamps: true });
+
+/**
+ * Pre-save hook: lowercase username and email before persisting.
+ */
+userSchema.pre('save', function () {
+  if (this.username) {
+    this.username = this.username.toLowerCase();
+  }
+  if (this.email) {
+    this.email = this.email.toLowerCase();
+  }
+});
 
 /**
  * Returns a safe user object — strips passwordHash and __v.
@@ -95,4 +112,3 @@ userSchema.methods.toSafeObject = function () {
 
 const User = mongoose.model('User', userSchema);
 export default User;
-

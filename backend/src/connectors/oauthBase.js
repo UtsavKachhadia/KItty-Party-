@@ -1,4 +1,4 @@
-﻿import { encrypt, decrypt } from '../utils/encryption.js';
+import { encrypt, decrypt } from '../utils/encryption.js';
 import env from '../../config/env.js';
 
 export default class OAuthBase {
@@ -43,7 +43,13 @@ export default class OAuthBase {
   }
 
   async getToken(userId) {
-    const user = await import('../models/User.js').then(m => m.default.findById(userId));
+    const user = await import('../models/User.js').then(m =>
+      m.default.findById(userId).select(
+        '+integrations.github.accessToken +integrations.github.encryptedToken ' +
+        '+integrations.slack.accessToken +integrations.slack.encryptedToken +integrations.slack.botToken ' +
+        '+integrations.jira.apiToken'
+      )
+    );
     if (!user || !user.integrations || !user.integrations[this.providerName]) {
       return null;
     }

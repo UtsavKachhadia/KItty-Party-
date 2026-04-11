@@ -1,0 +1,39 @@
+# ── Server ──────────────────────────────────────────────
+PORT=3001                              # Express + Socket.io listen port
+
+# ── MongoDB ─────────────────────────────────────────────
+MONGODB_URI=mongodb+srv://aarinshah2601_db_user:Aarin2601@cluster0.sd5msph.mongodb.net/workflowDB?retryWrites=true&w=majority
+#mongodb://127.0.0.1:27017/mcp-gateway
+
+# ── Upstash Redis (REST API — no driver needed) ────────
+UPSTASH_REDIS_REST_URL=https://your-region.upstash.io   # Upstash REST endpoint
+UPSTASH_REDIS_REST_TOKEN=AX...                          # Upstash REST token
+
+# ── Groq LLM ───────────────────────────────────────────
+GROQ_API_KEY=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
+#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                  # Groq cloud API key
+
+# ── GitHub ──────────────────────────────────────────────
+GITHUB_TOKEN=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                  # GitHub personal access token (repo scope)
+
+# ── Slack ───────────────────────────────────────────────
+SLACK_BOT_TOKEN=xoxb-10876931706871-10892411033138-ZorvpwINZrT5lkWaPql6ZxyN              # Slack Bot User OAuth token
+
+# ── Jira Cloud ──────────────────────────────────────────
+JIRA_BASE_URL=https://harshininimmagadda1609.atlassian.net   # Jira Cloud instance URL
+JIRA_EMAIL=harshininimmagadda1609@gmail.com              # Atlassian account email
+JIRA_API_TOKEN=ATATT3xFfGF0t8DjPraxFKuTUSMij1kOh_OeKZMev174zVovVXDfSAsSG9BKsed3F21C45TrilwFIKU887LbN0VrJCX4jZpDFHhqjHXcpLKD90IUMmpJj7UrOv0YWZAxntG0bTviBTFMNnLM4tDB3R03pZCsJVD48Mv78CXy1fNXEWegeImWv40=CA213056
+                # Jira API token
+
+# ── App Auth ────────────────────────────────────────────
+APP_API_KEY=hackathon-secret           # Simple API key for request auth
+
+JWT_SECRET=supersecret
+CREDENTIAL_ENCRYPTION_KEY=0123456789abcdef0123456789abcdefghijklmnopqrstuvwx
+
+
+JWT_SECRET=mysecretkey
+CREDENTIAL_ENCRYPTION_KEY=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+
+SMTP_USER=saanvibaweja33@gmail.com
+SMTP_PASS=nivy jlow juca nywo

@@ -27,12 +27,17 @@ const workflowRequestSchema = new mongoose.Schema({
 // TTL index to automatically delete or trigger expiration cleanly
 workflowRequestSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
-// Pre-save hook to auto-set expiresAt = Date.now() + 24h for new documents
-workflowRequestSchema.pre('save', function (next) {
+// Pre-save hook:
+//  - Auto-set expiresAt = Date.now() + 24h for new documents
+//  - Auto-set responseAt when status changes to APPROVED or REJECTED
+workflowRequestSchema.pre('save', function () {
   if (this.isNew && !this.expiresAt) {
     this.expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
   }
-  next();
+
+  if (this.isModified('status') && ['APPROVED', 'REJECTED'].includes(this.status)) {
+    this.responseAt = new Date();
+  }
 });
 
 // Static methods

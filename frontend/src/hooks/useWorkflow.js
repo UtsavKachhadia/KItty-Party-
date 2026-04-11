@@ -18,7 +18,7 @@ export default function useWorkflow() {
   const clearConsoleLogs = useUIStore((s) => s.clearConsoleLogs);
   const appendConsoleLog = useUIStore((s) => s.appendConsoleLog);
 
-  const submitWorkflow = async (userInput) => {
+  const submitWorkflow = async (userInput, executionContext = null) => {
     try {
       // Reset previous state
       clearDAG();
@@ -26,7 +26,27 @@ export default function useWorkflow() {
       setStatus('planning');
       appendConsoleLog(`→ Sending prompt: "${userInput}"`);
 
-      const { data } = await api.post('/workflow/run', { userInput });
+      const payload = { userInput };
+      if (executionContext) {
+        // Map frontend field names to backend expected shape
+        payload.executionContext = {
+          type: executionContext.executionType || executionContext.type,
+          targetUsername: executionContext.targetUserId || executionContext.targetUsername,
+        };
+      }
+
+      const { data, status: httpStatus } = await api.post('/workflow/run', payload);
+
+      // If backend returns 202 (Clarification or Invite Sent), bubble it up safely
+      if (data.status === 'NEEDS_CLARIFICATION' || data.status === 'USER_INVITED') {
+        setStatus('idle');
+        if (data.status === 'NEEDS_CLARIFICATION') {
+          appendConsoleLog('⚠ Clarification needed: who should this run for?');
+        } else {
+          appendConsoleLog(`⚑ ${data.message || 'Invitation sent!'}`);
+        }
+        return data; // Exit early without attempting to read data.dag
+      }
 
       // data = { runId, dag, status }
       startWorkflow(data.runId, data.dag, data.dag.steps);
@@ -35,11 +55,19 @@ export default function useWorkflow() {
         `✓ DAG planned: ${data.dag.workflowName || 'Workflow'} (${data.dag.steps.length} steps)`
       );
       appendConsoleLog(`  Run ID: ${data.runId}`);
+      if (data.executionContext?.type === 'THIRD_PARTY') {
+        appendConsoleLog(`  Execution: THIRD_PARTY → @${data.executionContext.targetUsername}`);
+      }
 
       return data;
     } catch (err) {
+      // 202 responses may come through as non-error, but handle edge cases
+      if (err.response?.status === 202 && err.response?.data?.status === 'NEEDS_CLARIFICATION') {
+        setStatus('idle');
+        return err.response.data;
+      }
       setStatus('failed');
-      const msg = err.response?.data?.message || err.message;
+      const msg = err.response?.data?.message || err.response?.data?.error || err.message;
       appendConsoleLog(`✗ Planning failed: ${msg}`);
       throw err;
     }

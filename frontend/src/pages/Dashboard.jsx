@@ -1,6 +1,11 @@
 import { useState, useEffect } from 'react';
 import api from '../lib/api';
 
+import {
+  PieChart, Pie, Cell, Tooltip as RechartsTooltip, Legend,
+  BarChart, Bar, XAxis, YAxis, ResponsiveContainer
+} from 'recharts';
+
 export default function Dashboard() {
   const [history, setHistory] = useState([]);
   const [threshold, setThreshold] = useState(0.8);
@@ -59,6 +64,36 @@ export default function Dashboard() {
     }
   };
 
+  const getStatusData = () => {
+    const counts = { completed: 0, failed: 0, pending: 0, running: 0 };
+    history.forEach(run => {
+      if (counts[run.status] !== undefined) counts[run.status]++;
+    });
+    return [
+      { name: 'Completed', value: counts.completed, color: '#22c55e' }, // green-500
+      { name: 'Failed', value: counts.failed, color: '#ef4444' },    // red-500
+      { name: 'Pending/Running', value: counts.pending + counts.running, color: '#eab308' } // yellow-500
+    ].filter(d => d.value > 0);
+  };
+
+  const getActivityData = () => {
+    const dates = {};
+    history.forEach(run => {
+      if (!run.startedAt) return;
+      // Use short date string
+      const date = new Date(run.startedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      dates[date] = (dates[date] || 0) + 1;
+    });
+    // Reverse so older dates are first
+    return Object.keys(dates).reverse().map(date => ({
+      name: date,
+      Runs: dates[date]
+    }));
+  };
+
+  const statusData = getStatusData();
+  const activityData = getActivityData();
+
   if (loading) return (
     <div className="flex-1 flex justify-center items-center h-full text-secondary">
       <span className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin"></span>
@@ -71,6 +106,66 @@ export default function Dashboard() {
       
       <div className="w-full max-w-4xl space-y-6">
         
+        {/* Analytics Panel */}
+        <div className="p-6 border border-outline-variant bg-surface-container rounded-xl">
+          <h2 className="text-lg font-bold text-on-surface mb-4">Analytics Overview</h2>
+          
+          {history.length === 0 ? (
+            <p className="text-secondary text-sm py-4">No data available for analytics.</p>
+          ) : (
+            <div className="flex flex-col md:flex-row gap-6">
+              
+              {/* Pie Chart: Status Breakdown */}
+              <div className="flex-1 bg-surface-container-low border border-outline-variant rounded-lg p-4 flex flex-col items-center">
+                <h3 className="text-sm font-bold text-on-surface mb-2 w-full">Execution Status</h3>
+                <div className="w-full h-[200px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie 
+                        data={statusData} 
+                        cx="50%" 
+                        cy="50%" 
+                        innerRadius={50} 
+                        outerRadius={80} 
+                        dataKey="value"
+                        paddingAngle={2}
+                      >
+                        {statusData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
+                        ))}
+                      </Pie>
+                      <RechartsTooltip 
+                        contentStyle={{ backgroundColor: '#131313', borderColor: '#49454f', color: '#e6e0e9', fontSize: '12px' }}
+                        itemStyle={{ color: '#e6e0e9' }}
+                      />
+                      <Legend iconType="circle" wrapperStyle={{ fontSize: '12px' }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* Bar Chart: Daily Activity */}
+              <div className="flex-1 bg-surface-container-low border border-outline-variant rounded-lg p-4 flex flex-col items-center">
+                <h3 className="text-sm font-bold text-on-surface mb-2 w-full">Activity (Recent)</h3>
+                <div className="w-full h-[200px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={activityData}>
+                      <XAxis dataKey="name" stroke="#6C757D" fontSize={11} tickLine={false} axisLine={false} />
+                      <RechartsTooltip 
+                        contentStyle={{ backgroundColor: '#131313', borderColor: '#49454f', color: '#e6e0e9', fontSize: '12px' }}
+                        itemStyle={{ color: '#e6e0e9' }}
+                        cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                      />
+                      <Bar dataKey="Runs" fill="#D0BCFF" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+            </div>
+          )}
+        </div>
+
         {/* Settings Panel */}
         <div className="p-6 border border-outline-variant bg-surface-container rounded-xl">
           <h2 className="text-lg font-bold text-on-surface mb-4">Automation Settings</h2>
