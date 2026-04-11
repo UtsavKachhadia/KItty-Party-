@@ -1,4 +1,5 @@
 import useWorkflowStore from '../../store/workflowStore';
+import { ConfidenceInfoIcon } from '../dag/ConfidenceBar';
 
 const iconMap = {
   pending: { icon: 'radio_button_unchecked', color: 'text-secondary', spin: false },
@@ -58,12 +59,17 @@ export default function StepsTab() {
               <p className="text-[13px] text-on-surface font-medium leading-tight">
                 {step.description || `${step.connector}.${step.action}`}
               </p>
-              <p className="text-[11px] text-secondary mt-0.5">
+              <p className="text-[11px] text-secondary mt-0.5 flex items-center">
                 {step.connector}.{step.action}
                 {step.confidence != null && (
-                  <span className="ml-2 font-mono tabular-nums">
-                    · {step.confidence.toFixed(2)}
-                  </span>
+                  <>
+                    <span className="ml-2 font-mono tabular-nums">
+                      · {step.confidence.toFixed(2)}
+                    </span>
+                    <span className="ml-1">
+                      <ConfidenceInfoIcon />
+                    </span>
+                  </>
                 )}
               </p>
 

@@ -63,10 +63,9 @@ export default function Signup({ onSignupSuccess, onGoToLogin }) {
 
   // ── Shared input style ──
   const inputStyle = (hasError) => ({
-    background: '#0E0E0E',
-    color: '#E5E2E1',
-    border: `0.5px solid ${hasError ? '#DC3545' : '#414755'}`,
-    transition: 'border-color 120ms ease',
+    background: '#0A0A0A',
+    color: '#EDE7DF',
+    border: `0.5px solid ${hasError ? '#DC3545' : '#2A2A2A'}`,
   });
 
   const renderError = (field) =>
@@ -77,23 +76,23 @@ export default function Signup({ onSignupSuccess, onGoToLogin }) {
     ) : null;
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden font-sans" style={{ background: '#131313' }}>
+    <div className="login-page-enter flex h-screen w-screen overflow-hidden font-sans" style={{ background: '#0D0D0D' }}>
 
       {/* ═══ LEFT PANEL — Brand ═══ */}
       <div
         className="hidden lg:flex flex-col justify-between w-[45%] h-full p-12"
-        style={{ background: '#1C1B1B' }}
+        style={{ background: '#141413' }}
       >
         <div className="flex-1 flex flex-col justify-center">
           <p
-            className="text-[11px] font-bold uppercase"
-            style={{ color: '#6C757D', letterSpacing: '0.2em' }}
+            className="text-[10px] font-semibold uppercase"
+            style={{ color: '#C2A878', letterSpacing: '0.25em' }}
           >
             MCP Gateway
           </p>
           <h1
-            className="text-[36px] font-bold leading-tight mt-2"
-            style={{ color: '#E5E2E1' }}
+            className="text-[38px] font-semibold leading-tight mt-2"
+            style={{ color: '#EDE7DF', fontFamily: "'Playfair Display', serif" }}
           >
             Create your<br />account.
           </h1>
@@ -104,8 +103,8 @@ export default function Signup({ onSignupSuccess, onGoToLogin }) {
 
           {/* Terminal block */}
           <div
-            className="mt-6 rounded-lg p-4 font-mono text-[11px] leading-relaxed"
-            style={{ background: '#0E0E0E', border: '0.5px solid #414755' }}
+            className="mt-6 rounded-lg p-4 font-mono text-[11px] leading-[1.8]"
+            style={{ background: '#0A0A0A', border: '0.5px solid rgba(194, 168, 120, 0.12)' }}
           >
             <p style={{ color: '#6C757D' }}>&gt; Setting up workspace...</p>
             <p style={{ color: '#28A745' }}>✓ Auth module: READY</p>
@@ -114,7 +113,7 @@ export default function Signup({ onSignupSuccess, onGoToLogin }) {
               &gt; Waiting for credentials...
               <span
                 className="ml-0.5 inline-block"
-                style={{ color: '#007AFF', animation: 'blink 1s step-end infinite' }}
+                style={{ color: '#C2A878', animation: 'blink 1s step-end infinite' }}
               >
                 █
               </span>
@@ -130,20 +129,20 @@ export default function Signup({ onSignupSuccess, onGoToLogin }) {
       {/* ═══ RIGHT PANEL — Signup Form ═══ */}
       <div
         className="flex-1 flex items-center justify-center px-6 md:px-12 overflow-y-auto"
-        style={{ background: '#131313' }}
+        style={{ background: '#0D0D0D' }}
       >
         <div className="w-full max-w-[400px] py-10">
 
           {/* Header */}
           <p
-            className="text-[11px] font-bold uppercase lg:hidden"
-            style={{ color: '#6C757D', letterSpacing: '0.2em' }}
+            className="text-[10px] font-semibold uppercase lg:hidden"
+            style={{ color: '#C2A878', letterSpacing: '0.25em' }}
           >
             MCP Gateway
           </p>
           <h2
             className="text-[16px] font-bold mt-2"
-            style={{ color: '#E5E2E1' }}
+            style={{ color: '#EDE7DF' }}
           >
             Create an account
           </h2>
@@ -175,7 +174,7 @@ export default function Signup({ onSignupSuccess, onGoToLogin }) {
                 onBlur={() => markTouched('email')}
                 disabled={loading}
                 placeholder="you@company.com"
-                className="w-full h-[36px] rounded-lg px-3 text-[13px] font-sans outline-none disabled:opacity-50"
+                className="login-input-enhanced w-full h-[36px] rounded-lg px-3 text-[13px] font-sans outline-none disabled:opacity-50"
                 style={inputStyle(touched.email && errors.email)}
                 id="signup-email"
                 autoComplete="email"
@@ -198,7 +197,7 @@ export default function Signup({ onSignupSuccess, onGoToLogin }) {
                 onBlur={() => markTouched('username')}
                 disabled={loading}
                 placeholder="your-username"
-                className="w-full h-[36px] rounded-lg px-3 text-[13px] font-sans outline-none disabled:opacity-50"
+                className="login-input-enhanced w-full h-[36px] rounded-lg px-3 text-[13px] font-sans outline-none disabled:opacity-50"
                 style={inputStyle(touched.username && errors.username)}
                 id="signup-username"
                 autoComplete="username"
@@ -221,7 +220,7 @@ export default function Signup({ onSignupSuccess, onGoToLogin }) {
                 onBlur={() => markTouched('password')}
                 disabled={loading}
                 placeholder="Min 6 characters"
-                className="w-full h-[36px] rounded-lg px-3 text-[13px] font-sans outline-none disabled:opacity-50"
+                className="login-input-enhanced w-full h-[36px] rounded-lg px-3 text-[13px] font-sans outline-none disabled:opacity-50"
                 style={inputStyle(touched.password && errors.password)}
                 id="signup-password"
                 autoComplete="new-password"
@@ -256,19 +255,14 @@ export default function Signup({ onSignupSuccess, onGoToLogin }) {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-[40px] rounded-lg font-bold text-[13px] mt-6 flex items-center justify-center disabled:cursor-not-allowed"
+              className="login-btn-primary w-full h-[40px] rounded-lg font-bold text-[13px] mt-6 flex items-center justify-center disabled:cursor-not-allowed disabled:opacity-60"
               style={{
-                background: isValid ? '#007AFF' : '#007AFF60',
-                color: '#F9F9F9',
+                background: isValid ? '#C2A878' : '#C2A87860',
+                color: '#0D0D0D',
                 border: 'none',
-                opacity: loading ? 0.7 : 1,
-                transition: 'transform 80ms ease, opacity 120ms ease, background 200ms ease',
+                transition: 'background 200ms ease',
               }}
-              onMouseDown={(e) => {
-                if (!loading && isValid) e.currentTarget.style.transform = 'scale(0.98)';
-              }}
-              onMouseUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+
               id="signup-submit-btn"
             >
               {loading ? (
@@ -283,7 +277,7 @@ export default function Signup({ onSignupSuccess, onGoToLogin }) {
                     cx="12"
                     cy="12"
                     r="10"
-                    stroke="#F9F9F9"
+                    stroke="#0D0D0D"
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeDasharray="15.7 47.1"
@@ -303,7 +297,7 @@ export default function Signup({ onSignupSuccess, onGoToLogin }) {
                 type="button"
                 onClick={onGoToLogin}
                 className="hover:underline bg-transparent border-none cursor-pointer p-0"
-                style={{ color: '#007AFF', font: 'inherit' }}
+                style={{ color: '#C2A878', font: 'inherit' }}
               >
                 Sign in
               </button>

@@ -1,5 +1,73 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import api from '../lib/api';
+
+/**
+ * Terminal log lines with staggered typewriter reveal.
+ * Content is NOT changed — only presentation is enhanced.
+ */
+function TerminalBlock() {
+  const lines = [
+    { text: '> Initializing MCP runtime...', color: '#6C757D', delay: 0 },
+    { text: '✓ GitHub connector: ACTIVE', color: '#28A745', delay: 600 },
+    { text: '✓ Slack connector: ACTIVE', color: '#28A745', delay: 1100 },
+    { text: '⚠ Jira connector: CHECKING', color: '#FFBF00', delay: 1600 },
+    { text: '> Loading workflow engine...', color: '#6C757D', delay: 2100 },
+  ];
+
+  const [visibleCount, setVisibleCount] = useState(0);
+
+  useEffect(() => {
+    const timers = lines.map((_, i) =>
+      setTimeout(() => setVisibleCount(i + 1), lines[i].delay)
+    );
+    return () => timers.forEach(clearTimeout);
+  }, []);
+
+  return (
+    <div
+      className="mt-6 rounded-lg p-4 font-mono text-[11px] leading-[1.8]"
+      style={{
+        background: '#0A0A0A',
+        border: '0.5px solid rgba(194, 168, 120, 0.12)',
+      }}
+    >
+      {lines.map((line, i) => (
+        <p
+          key={i}
+          className="terminal-line"
+          style={{
+            color: line.color,
+            animationDelay: `${line.delay}ms`,
+            display: visibleCount > i ? 'block' : 'none',
+          }}
+        >
+          {line.text}
+        </p>
+      ))}
+
+      {/* Awaiting auth with blinking cursor — always visible */}
+      <p
+        className="terminal-line"
+        style={{
+          color: '#6C757D',
+          animationDelay: '2500ms',
+          display: visibleCount >= lines.length ? 'block' : 'none',
+        }}
+      >
+        &gt; Awaiting authentication...
+        <span
+          className="ml-0.5 inline-block"
+          style={{
+            color: '#C2A878',
+            animation: 'blink 1s step-end infinite',
+          }}
+        >
+          █
+        </span>
+      </p>
+    </div>
+  );
+}
 
 /**
  * Login page — pre-auth gate with split-panel layout.
@@ -38,51 +106,36 @@ export default function Login({ onLoginSuccess, onGoToSignup }) {
   };
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden font-sans" style={{ background: '#131313' }}>
+    <div
+      className="login-page-enter flex h-screen w-screen overflow-hidden font-sans"
+      style={{ background: '#0D0D0D' }}
+    >
 
       {/* ═══ LEFT PANEL — Brand / Terminal ═══ */}
       <div
         className="hidden md:flex flex-col justify-between w-[60%] h-full p-12"
-        style={{ background: '#1C1B1B' }}
+        style={{ background: '#141413' }}
       >
         {/* Brand block */}
         <div className="flex-1 flex flex-col justify-center">
           <p
-            className="text-[11px] font-bold uppercase"
-            style={{ color: '#6C757D', letterSpacing: '0.2em' }}
+            className="text-[10px] font-semibold uppercase"
+            style={{ color: '#C2A878', letterSpacing: '0.25em' }}
           >
-            MCP Gateway
+            Agentic Infrastructure
           </p>
           <h1
-            className="text-[36px] font-bold leading-tight mt-2"
-            style={{ color: '#E5E2E1' }}
+            className="text-[38px] font-semibold leading-tight mt-3"
+            style={{
+              color: '#EDE7DF',
+              fontFamily: "'Playfair Display', serif",
+            }}
           >
             Agentic workflow<br />execution.
           </h1>
 
-          {/* Terminal block */}
-          <div
-            className="mt-6 rounded-lg p-4 font-mono text-[11px] leading-relaxed"
-            style={{ background: '#0E0E0E', border: '0.5px solid #414755' }}
-          >
-            <p style={{ color: '#6C757D' }}>&gt; Initializing MCP runtime...</p>
-            <p style={{ color: '#28A745' }}>✓ GitHub connector: ACTIVE</p>
-            <p style={{ color: '#28A745' }}>✓ Slack connector: ACTIVE</p>
-            <p style={{ color: '#FFBF00' }}>⚠ Jira connector: CHECKING</p>
-            <p style={{ color: '#6C757D' }}>&gt; Loading workflow engine...</p>
-            <p style={{ color: '#6C757D' }}>
-              &gt; Awaiting authentication...
-              <span
-                className="ml-0.5 inline-block"
-                style={{
-                  color: '#007AFF',
-                  animation: 'blink 1s step-end infinite',
-                }}
-              >
-                █
-              </span>
-            </p>
-          </div>
+          {/* Terminal block — content unchanged, presentation enhanced */}
+          <TerminalBlock />
         </div>
 
         {/* Version */}
@@ -94,20 +147,20 @@ export default function Login({ onLoginSuccess, onGoToSignup }) {
       {/* ═══ RIGHT PANEL — Login Form ═══ */}
       <div
         className="flex-1 flex items-center justify-center px-6 md:px-12"
-        style={{ background: '#131313' }}
+        style={{ background: '#0D0D0D' }}
       >
         <div className="w-full max-w-[400px]">
 
           {/* Header */}
           <p
-            className="text-[11px] font-bold uppercase"
-            style={{ color: '#6C757D', letterSpacing: '0.2em' }}
+            className="text-[10px] font-semibold uppercase"
+            style={{ color: '#C2A878', letterSpacing: '0.25em' }}
           >
             MCP Gateway
           </p>
           <h2
             className="text-[16px] font-bold mt-2"
-            style={{ color: '#E5E2E1' }}
+            style={{ color: '#EDE7DF' }}
           >
             Sign in to continue
           </h2>
@@ -129,18 +182,11 @@ export default function Login({ onLoginSuccess, onGoToSignup }) {
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}
                 placeholder="you@company.com"
-                className="w-full h-[36px] rounded-lg px-3 text-[13px] font-sans outline-none disabled:opacity-50"
+                className="login-input-enhanced w-full h-[36px] rounded-lg px-3 text-[13px] font-sans outline-none disabled:opacity-50"
                 style={{
-                  background: '#0E0E0E',
-                  color: '#E5E2E1',
-                  border: `0.5px solid ${authError ? '#DC3545' : '#414755'}`,
-                  transition: 'border-color 120ms ease',
-                }}
-                onFocus={(e) => {
-                  if (!authError) e.target.style.borderColor = '#007AFF';
-                }}
-                onBlur={(e) => {
-                  if (!authError) e.target.style.borderColor = '#414755';
+                  background: '#0A0A0A',
+                  color: '#EDE7DF',
+                  border: `0.5px solid ${authError ? '#DC3545' : '#2A2A2A'}`,
                 }}
                 id="login-email"
                 autoComplete="email"
@@ -168,7 +214,7 @@ export default function Login({ onLoginSuccess, onGoToSignup }) {
                 <a
                   href="#"
                   className="text-[11px] hover:underline"
-                  style={{ color: '#007AFF' }}
+                  style={{ color: '#C2A878' }}
                   tabIndex={0}
                 >
                   Forgot password?
@@ -180,15 +226,12 @@ export default function Login({ onLoginSuccess, onGoToSignup }) {
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={loading}
                 placeholder="••••••••••••"
-                className="w-full h-[36px] rounded-lg px-3 text-[13px] font-sans outline-none disabled:opacity-50"
+                className="login-input-enhanced w-full h-[36px] rounded-lg px-3 text-[13px] font-sans outline-none disabled:opacity-50"
                 style={{
-                  background: '#0E0E0E',
-                  color: '#E5E2E1',
-                  border: '0.5px solid #414755',
-                  transition: 'border-color 120ms ease',
+                  background: '#0A0A0A',
+                  color: '#EDE7DF',
+                  border: '0.5px solid #2A2A2A',
                 }}
-                onFocus={(e) => { e.target.style.borderColor = '#007AFF'; }}
-                onBlur={(e) => { e.target.style.borderColor = '#414755'; }}
                 id="login-password"
                 autoComplete="current-password"
               />
@@ -201,19 +244,8 @@ export default function Login({ onLoginSuccess, onGoToSignup }) {
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
                 disabled={loading}
-                className="login-checkbox"
+                className="login-checkbox-enhanced"
                 id="login-remember"
-                style={{
-                  appearance: 'none',
-                  WebkitAppearance: 'none',
-                  width: '12px',
-                  height: '12px',
-                  border: '0.5px solid #414755',
-                  borderRadius: '3px',
-                  background: rememberMe ? '#007AFF' : '#0E0E0E',
-                  cursor: 'pointer',
-                  flexShrink: 0,
-                }}
               />
               <label
                 htmlFor="login-remember"
@@ -228,24 +260,16 @@ export default function Login({ onLoginSuccess, onGoToSignup }) {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-[36px] rounded-lg font-bold text-[13px] mt-6 flex items-center justify-center disabled:cursor-not-allowed"
+              className="login-btn-primary w-full h-[36px] rounded-lg font-bold text-[13px] mt-6 flex items-center justify-center disabled:cursor-not-allowed disabled:opacity-60"
               style={{
-                background: '#007AFF',
-                color: '#F9F9F9',
+                background: '#C2A878',
+                color: '#0D0D0D',
                 border: 'none',
-                opacity: loading ? 0.7 : 1,
-                transition: 'transform 80ms ease, opacity 120ms ease',
               }}
-              onMouseDown={(e) => {
-                if (!loading) e.currentTarget.style.transform = 'scale(0.98)';
-              }}
-              onMouseUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
               id="login-submit-btn"
             >
               {loading ? (
                 <svg
-                  className="animate-spin"
                   width="16"
                   height="16"
                   viewBox="0 0 24 24"
@@ -256,7 +280,7 @@ export default function Login({ onLoginSuccess, onGoToSignup }) {
                     cx="12"
                     cy="12"
                     r="10"
-                    stroke="#F9F9F9"
+                    stroke="#0D0D0D"
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeDasharray="15.7 47.1"
@@ -273,13 +297,13 @@ export default function Login({ onLoginSuccess, onGoToSignup }) {
             <div className="absolute inset-0 flex items-center">
               <div
                 className="w-full"
-                style={{ borderTop: '0.5px solid #414755' }}
+                style={{ borderTop: '0.5px solid #2A2A2A' }}
               />
             </div>
             <div className="relative flex justify-center">
               <span
                 className="px-2 text-[11px] uppercase"
-                style={{ background: '#131313', color: '#6C757D' }}
+                style={{ background: '#0D0D0D', color: '#6C757D' }}
               >
                 Or continue with
               </span>
@@ -290,14 +314,13 @@ export default function Login({ onLoginSuccess, onGoToSignup }) {
           <button
             type="button"
             disabled={loading}
-            className="w-full h-[36px] rounded-lg text-[13px] font-sans flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+            className="login-btn-secondary w-full h-[36px] rounded-lg text-[13px] font-sans flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
             style={{
               background: 'transparent',
-              color: '#E5E2E1',
-              border: '0.5px solid #414755',
-              transition: 'background 120ms ease',
+              color: '#EDE7DF',
+              border: '0.5px solid #2A2A2A',
             }}
-            onMouseOver={(e) => { e.currentTarget.style.background = '#2A2A2A'; }}
+            onMouseOver={(e) => { if (!loading) e.currentTarget.style.background = '#1A1A19'; }}
             onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; }}
             id="login-sso-btn"
           >
@@ -312,7 +335,7 @@ export default function Login({ onLoginSuccess, onGoToSignup }) {
                 type="button"
                 onClick={onGoToSignup}
                 className="hover:underline bg-transparent border-none cursor-pointer p-0"
-                style={{ color: '#007AFF', font: 'inherit' }}
+                style={{ color: '#C2A878', font: 'inherit' }}
               >
                 Sign up
               </button>

@@ -17,7 +17,7 @@ export default function RightPanel() {
   return (
     <div
       id="right-panel"
-      className="w-[280px] bg-surface-container-low border-l border-[0.5px] border-outline-variant/20 flex flex-col flex-shrink-0 overflow-hidden"
+      className="w-[280px] bg-surface-container-low border-l border-[0.5px] border-outline-variant/20 flex flex-col flex-shrink-0"
     >
       {/* Tab bar */}
       <div className="flex border-b border-[0.5px] border-outline-variant/20 flex-shrink-0">
