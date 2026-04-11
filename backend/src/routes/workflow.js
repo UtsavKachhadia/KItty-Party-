@@ -1,9 +1,11 @@
 import { Router } from 'express';
 import Run from '../models/Run.js';
+import User from '../models/User.js';
 import { planWorkflow } from '../services/llm.js';
 import { scoreDAG } from '../services/confidenceScorer.js';
 import { runDAG } from '../services/dagRunner.js';
 import { getConnectorHealth } from '../connectors/index.js';
+import requireAuth from '../middleware/auth.js';
 
 const router = Router();
 
@@ -11,7 +13,7 @@ const router = Router();
  * POST /api/workflow/run
  * Takes a natural language instruction, plans a DAG, scores it, and starts execution.
  */
-router.post('/run', async (req, res, next) => {
+router.post('/run', requireAuth, async (req, res, next) => {
   try {
     const { userInput, options } = req.body;
 
@@ -46,9 +48,12 @@ router.post('/run', async (req, res, next) => {
       userInput,
     });
 
-    // 5. Start DAG execution — non-blocking
+    // 5. Fetch full user document for connector credentials
+    const fullUser = await User.findById(req.user.userId).lean();
+
+    // 6. Start DAG execution — non-blocking
     const io = req.app.get('io');
-    runDAG(run, io).catch((err) => {
+    runDAG(run, io, fullUser).catch((err) => {
       console.error(`Background DAG run error: ${err.message}`);
     });
 
@@ -67,7 +72,7 @@ router.post('/run', async (req, res, next) => {
  * GET /api/workflow/history
  * Returns the last 20 runs sorted by startedAt desc.
  */
-router.get('/history', async (req, res, next) => {
+router.get('/history', requireAuth, async (req, res, next) => {
   try {
     const runs = await Run.find()
       .sort({ startedAt: -1 })

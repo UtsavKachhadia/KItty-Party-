@@ -1,25 +1,33 @@
 import { WebClient } from '@slack/web-api';
-import env from '../../config/env.js';
-
-const web = new WebClient(env.SLACK_BOT_TOKEN);
 
 const KNOWN_ACTIONS = ['postMessage', 'mentionUser', 'lookupChannel', 'getUser'];
 
+/**
+ * Creates a Slack WebClient from user-specific token.
+ */
+function getSlackClient(user) {
+  const token = user?.connectors?.slack?.token;
+  if (!token) {
+    throw new Error('Slack token not configured for this user');
+  }
+  return new WebClient(token);
+}
+
 const handlers = {
-  async postMessage({ channel, text, blocks }) {
+  async postMessage(web, { channel, text, blocks }) {
     const args = { channel, text };
     if (blocks) args.blocks = blocks;
     const res = await web.chat.postMessage(args);
     return { ts: res.ts, channel: res.channel };
   },
 
-  async mentionUser({ channel, userId, text }) {
+  async mentionUser(web, { channel, userId, text }) {
     const mentionText = `<@${userId}> ${text}`;
     const res = await web.chat.postMessage({ channel, text: mentionText });
     return { ts: res.ts, channel: res.channel };
   },
 
-  async lookupChannel({ name }) {
+  async lookupChannel(web, { name }) {
     const cleanName = name.replace(/^#/, '');
     const res = await web.conversations.list({ types: 'public_channel,private_channel', limit: 200 });
     const ch = (res.channels || []).find(
@@ -29,7 +37,7 @@ const handlers = {
     return { channelId: ch.id, name: ch.name };
   },
 
-  async getUser({ email }) {
+  async getUser(web, { email }) {
     const res = await web.users.lookupByEmail({ email });
     return { userId: res.user.id, name: res.user.real_name };
   },
@@ -39,12 +47,13 @@ const slackConnector = {
   name: 'slack',
   KNOWN_ACTIONS,
 
-  async execute(action, params) {
+  async execute(action, params, user) {
     try {
       if (!handlers[action]) {
         return { success: false, error: `Unknown Slack action: ${action}` };
       }
-      const data = await handlers[action](params);
+      const web = getSlackClient(user);
+      const data = await handlers[action](web, params);
       return { success: true, data };
     } catch (err) {
       return {
@@ -54,8 +63,9 @@ const slackConnector = {
     }
   },
 
-  isConfigured() {
-    return Boolean(env.SLACK_BOT_TOKEN);
+  isConfigured(user) {
+    if (user) return Boolean(user?.connectors?.slack?.token);
+    return true; // Connector code is always available
   },
 };
 

@@ -7,7 +7,7 @@ import api from '../lib/api';
  * No app shell (TopBar/Sidebar/RightPanel) rendered.
  * @param {{ onLoginSuccess: () => void }} props
  */
-export default function Login({ onLoginSuccess }) {
+export default function Login({ onLoginSuccess, onGoToSignup }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
@@ -308,13 +308,14 @@ export default function Login({ onLoginSuccess }) {
           <div className="mt-8">
             <p className="text-[11px]" style={{ color: '#6C757D' }}>
               Don't have an account?{' '}
-              <a
-                href="#"
-                className="hover:underline"
-                style={{ color: '#007AFF' }}
+              <button
+                type="button"
+                onClick={onGoToSignup}
+                className="hover:underline bg-transparent border-none cursor-pointer p-0"
+                style={{ color: '#007AFF', font: 'inherit' }}
               >
-                Request access
-              </a>
+                Sign up
+              </button>
             </p>
             <p className="text-[10px] mt-2" style={{ color: '#414755' }}>
               Tokens stored in secure enclave. Not transmitted.

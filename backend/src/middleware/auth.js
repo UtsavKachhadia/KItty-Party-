@@ -1,20 +1,41 @@
+import jwt from 'jsonwebtoken';
 import env from '../../config/env.js';
 
 /**
- * Simple API key authentication middleware.
- * Checks x-api-key header against APP_API_KEY.
- * Skips auth for GET /health.
+ * JWT authentication middleware.
+ * Validates Bearer token from Authorization header and attaches req.user.
+ * Returns consistent error shape: { success: false, message: "..." }
  */
-export default function auth(req, res, next) {
-  // Skip auth for health check
-  if (req.method === 'GET' && req.path === '/health') {
-    return next();
+export default function requireAuth(req, res, next) {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({
+      success: false,
+      message: 'Authentication required. Provide a valid Bearer token.',
+    });
   }
 
-  const apiKey = req.headers['x-api-key'];
-  if (!apiKey || apiKey !== env.APP_API_KEY) {
-    return res.status(401).json({ error: 'Unauthorized', code: 'AUTH_FAILED' });
-  }
+  const token = authHeader.split(' ')[1];
 
-  next();
+  try {
+    const decoded = jwt.verify(token, env.JWT_SECRET);
+    req.user = {
+      userId: decoded.userId,
+      email: decoded.email,
+      role: decoded.role,
+    };
+    next();
+  } catch (err) {
+    if (err.name === 'TokenExpiredError') {
+      return res.status(401).json({
+        success: false,
+        message: 'Token expired. Please log in again.',
+      });
+    }
+    return res.status(401).json({
+      success: false,
+      message: 'Invalid token.',
+    });
+  }
 }

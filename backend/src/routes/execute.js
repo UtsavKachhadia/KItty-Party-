@@ -1,7 +1,9 @@
 import { Router } from 'express';
 import Run from '../models/Run.js';
+import User from '../models/User.js';
 import redis from '../../config/redis.js';
 import { runDAG } from '../services/dagRunner.js';
+import requireAuth from '../middleware/auth.js';
 
 const router = Router();
 
@@ -9,7 +11,7 @@ const router = Router();
  * POST /api/workflow/replay/:runId
  * Clones a previous run's DAG into a new Run and re-executes it.
  */
-router.post('/workflow/replay/:runId', async (req, res, next) => {
+router.post('/workflow/replay/:runId', requireAuth, async (req, res, next) => {
   try {
     const { runId } = req.params;
     const { newParams } = req.body || {};
@@ -47,8 +49,11 @@ router.post('/workflow/replay/:runId', async (req, res, next) => {
       userInput: original.userInput,
     });
 
+    // Fetch full user document for connector credentials
+    const fullUser = await User.findById(req.user.userId).lean();
+
     const io = req.app.get('io');
-    runDAG(newRun, io).catch((err) => {
+    runDAG(newRun, io, fullUser).catch((err) => {
       console.error(`Background replay run error: ${err.message}`);
     });
 
@@ -66,7 +71,7 @@ router.post('/workflow/replay/:runId', async (req, res, next) => {
  * POST /api/execute/approve
  * Sets Redis approval key so dagRunner can proceed.
  */
-router.post('/execute/approve', async (req, res, next) => {
+router.post('/execute/approve', requireAuth, async (req, res, next) => {
   try {
     const { runId, stepId } = req.body;
 
@@ -89,7 +94,7 @@ router.post('/execute/approve', async (req, res, next) => {
  * POST /api/execute/reject
  * Sets Redis rejection key so dagRunner skips the step.
  */
-router.post('/execute/reject', async (req, res, next) => {
+router.post('/execute/reject', requireAuth, async (req, res, next) => {
   try {
     const { runId, stepId } = req.body;
 

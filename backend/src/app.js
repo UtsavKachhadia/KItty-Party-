@@ -1,8 +1,9 @@
 import express from 'express';
 import cors from 'cors';
 import logger from './middleware/logger.js';
-import auth from './middleware/auth.js';
+import requireAuth from './middleware/auth.js';
 import errorHandler from './middleware/errorHandler.js';
+import authRoutes from './routes/auth.js';
 import workflowRoutes from './routes/workflow.js';
 import executeRoutes from './routes/execute.js';
 import auditRoutes from './routes/audit.js';
@@ -20,14 +21,15 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', uptime: process.uptime(), timestamp: new Date().toISOString() });
 });
 
-// ── Auth for all /api/* routes ──
-app.use('/api', auth);
+// ── Public routes (no auth required) ──
+app.use('/api/auth', authRoutes);
+app.use('/api/connectors', connectorsRoutes);  // health + test endpoints
 
-// ── Mount routes ──
+// ── Protected routes (JWT auth applied per-route via requireAuth) ──
+// requireAuth is applied inside each route file for granular control
 app.use('/api/workflow', workflowRoutes);
 app.use('/api', executeRoutes);
-app.use('/api/audit', auditRoutes);
-app.use('/api/connectors', connectorsRoutes);
+app.use('/api/audit', requireAuth, auditRoutes);
 
 // ── Global error handler (must be last) ──
 app.use(errorHandler);

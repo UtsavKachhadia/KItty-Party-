@@ -1,12 +1,20 @@
 import { Octokit } from '@octokit/rest';
-import env from '../../config/env.js';
-
-const octokit = new Octokit({ auth: env.GITHUB_TOKEN });
 
 const KNOWN_ACTIONS = ['createIssue', 'assignIssue', 'addLabel', 'createPR', 'listIssues'];
 
+/**
+ * Creates an Octokit client from user-specific GitHub token.
+ */
+function getOctokitClient(user) {
+  const token = user?.connectors?.github?.token;
+  if (!token) {
+    throw new Error('GitHub token not configured for this user');
+  }
+  return new Octokit({ auth: token });
+}
+
 const handlers = {
-  async createIssue({ owner, repo, title, body, labels }) {
+  async createIssue(octokit, { owner, repo, title, body, labels }) {
     const res = await octokit.issues.create({
       owner,
       repo,
@@ -17,7 +25,7 @@ const handlers = {
     return res.data;
   },
 
-  async assignIssue({ owner, repo, issue_number, assignees }) {
+  async assignIssue(octokit, { owner, repo, issue_number, assignees }) {
     const res = await octokit.issues.addAssignees({
       owner,
       repo,
@@ -27,7 +35,7 @@ const handlers = {
     return res.data;
   },
 
-  async addLabel({ owner, repo, issue_number, labels }) {
+  async addLabel(octokit, { owner, repo, issue_number, labels }) {
     const res = await octokit.issues.addLabels({
       owner,
       repo,
@@ -37,7 +45,7 @@ const handlers = {
     return res.data;
   },
 
-  async createPR({ owner, repo, title, body, head, base }) {
+  async createPR(octokit, { owner, repo, title, body, head, base }) {
     const res = await octokit.pulls.create({
       owner,
       repo,
@@ -49,7 +57,7 @@ const handlers = {
     return res.data;
   },
 
-  async listIssues({ owner, repo, state }) {
+  async listIssues(octokit, { owner, repo, state }) {
     const res = await octokit.issues.listForRepo({
       owner,
       repo,
@@ -63,12 +71,13 @@ const githubConnector = {
   name: 'github',
   KNOWN_ACTIONS,
 
-  async execute(action, params) {
+  async execute(action, params, user) {
     try {
       if (!handlers[action]) {
         return { success: false, error: `Unknown GitHub action: ${action}` };
       }
-      const data = await handlers[action](params);
+      const octokit = getOctokitClient(user);
+      const data = await handlers[action](octokit, params);
       return { success: true, data };
     } catch (err) {
       return {
@@ -79,8 +88,9 @@ const githubConnector = {
     }
   },
 
-  isConfigured() {
-    return Boolean(env.GITHUB_TOKEN);
+  isConfigured(user) {
+    if (user) return Boolean(user?.connectors?.github?.token);
+    return true; // Connector code is always available
   },
 };
 

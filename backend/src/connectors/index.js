@@ -17,12 +17,14 @@ export function getConnector(name) {
 
 /**
  * Check health / configuration status of every registered connector.
+ * Without a user context, reports whether the connector code is available.
+ * With a user context, reports whether the user has configured that connector.
  */
-export function getConnectorHealth() {
+export function getConnectorHealth(user) {
   const health = {};
   for (const [name, connector] of Object.entries(registry)) {
     health[name] = {
-      configured: connector.isConfigured(),
+      configured: connector.isConfigured(user),
       actions: connector.KNOWN_ACTIONS,
     };
   }

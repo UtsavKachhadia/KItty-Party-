@@ -47,7 +47,7 @@ async function waitForApproval(runId, stepId) {
  * Executes a full DAG run. Updates Run document and emits socket events throughout.
  * This function NEVER throws — all errors are caught and emitted.
  */
-export async function runDAG(run, io) {
+export async function runDAG(run, io, user) {
   const runId = run._id.toString();
 
   try {
@@ -145,7 +145,7 @@ export async function runDAG(run, io) {
       }
 
       const startTime = Date.now();
-      const result = await connector.execute(step.action, step.params);
+      const result = await connector.execute(step.action, step.params, user);
       const durationMs = Date.now() - startTime;
 
       // ── Audit log ──
@@ -179,7 +179,7 @@ export async function runDAG(run, io) {
         emitStepCompleted(io, runId, stepId, result.data);
       } else {
         // ── IFR: handle failure ──
-        const retryFn = () => connector.execute(step.action, step.params);
+        const retryFn = () => connector.execute(step.action, step.params, user);
         const ifrResult = await handleFailure(result.error || result, step, retryFn);
 
         if (ifrResult.tier === 1 && ifrResult.retried && ifrResult.retryResult?.success) {
