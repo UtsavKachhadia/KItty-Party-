@@ -24,12 +24,15 @@ app.get('/health', (req, res) => {
 // ── Auth for all /api/* routes ──
 app.use('/api', auth);
 
+import chatRoutes from './routes/chat.js';
+
 // ── Mount routes ──
 app.use('/api/workflow', workflowRoutes);
 app.use('/api', executeRoutes);
 app.use('/api/audit', auditRoutes);
 app.use('/api/connectors', connectorsRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/chat', chatRoutes);
 
 // ── Global error handler (must be last) ──
 app.use(errorHandler);

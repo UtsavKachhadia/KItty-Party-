@@ -22,8 +22,8 @@ export default function TopBar() {
   );
 
   const connectorIcons = [
-    { key: 'github', logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/slack/slack-original.svg',
-    url: 'https://slack.com' , label: 'GitHub' },
+    { key: 'github', logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/github/github-original.svg',
+    url: 'https://github.com' , label: 'GitHub' },
     { key: 'slack', logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/slack/slack-original.svg',
     url: 'https://slack.com' , label: 'Slack' },
     { key: 'jira', logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/jira/jira-original.svg',
@@ -59,20 +59,21 @@ export default function TopBar() {
         {/* Connector health icons */}
         <div className="flex items-center gap-3">
           {connectorIcons.map(({ key, label , logo , url}) => (
-            <div
-            
+            <a
               key={key}
               href={url}
-              className="flex items-center gap-1.5 group cursor-default"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 group cursor-pointer hover:opacity-80 transition-opacity"
               title={`${label}: ${health[key]?.configured ? 'Connected' : 'Not configured'}`}
             >
-              <img src={logo} alt={label} className="w-5 h-5 object-contain"/>
+              <img src={logo} alt={label} className="w-5 h-5 object-contain" />
               <span
                 className={`w-[6px] h-[6px] rounded-full ${
                   health[key]?.configured ? 'bg-success' : 'bg-error'
                 }`}
               />
-            </div>
+            </a>
           ))}
         </div>
 
