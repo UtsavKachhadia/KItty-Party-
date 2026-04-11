@@ -2,32 +2,41 @@ import { useState } from 'react';
 import api from '../lib/api';
 
 /**
- * Login page — pre-auth gate with split-panel layout.
- * Left: brand + terminal animation. Right: login form.
+ * Login & Register page — pre-auth gate with split-panel layout.
+ * Left: brand + terminal animation. Right: login/signup form.
  * No app shell (TopBar/Sidebar/RightPanel) rendered.
  * @param {{ onLoginSuccess: () => void }} props
  */
 export default function Login({ onLoginSuccess }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [isRegister, setIsRegister] = useState(false);
+  
+  const [email, setEmail] = useState('admin@mcp.com');
+  const [password, setPassword] = useState('admin123');
+  const [name, setName] = useState('');
+  
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const [authError, setAuthError] = useState(null);
 
-  const handleLogin = async (e) => {
+  const handleSubmit = async (e) => {
     e?.preventDefault();
     if (loading) return;
     setLoading(true);
     setAuthError(null);
 
+    const endpoint = isRegister ? '/auth/register' : '/auth/login';
+    const payload = isRegister ? { name, email, password } : { email, password };
+
     try {
-      const { data } = await api.post('/auth/login', { email, password });
+      const { data } = await api.post(endpoint, payload);
       if (data.token) {
         localStorage.setItem('mcp_token', data.token);
       }
       onLoginSuccess();
     } catch (err) {
-      if (err.response?.status === 401) {
+      if (err.response?.data?.error) {
+        setAuthError(err.response.data.error);
+      } else if (err.response?.status === 401) {
         setAuthError('Invalid credentials. Check your email and try again.');
       } else {
         setAuthError('Connection failed. Retry or contact your admin.');
@@ -68,7 +77,7 @@ export default function Login({ onLoginSuccess }) {
             <p style={{ color: '#6C757D' }}>&gt; Initializing MCP runtime...</p>
             <p style={{ color: '#28A745' }}>✓ GitHub connector: ACTIVE</p>
             <p style={{ color: '#28A745' }}>✓ Slack connector: ACTIVE</p>
-            <p style={{ color: '#FFBF00' }}>⚠ Jira connector: CHECKING</p>
+            <p style={{ color: '#28A745' }}>✓ Jira connector: ACTIVE</p>
             <p style={{ color: '#6C757D' }}>&gt; Loading workflow engine...</p>
             <p style={{ color: '#6C757D' }}>
               &gt; Awaiting authentication...
@@ -109,11 +118,44 @@ export default function Login({ onLoginSuccess }) {
             className="text-[16px] font-bold mt-2"
             style={{ color: '#E5E2E1' }}
           >
-            Sign in to continue
+            {isRegister ? 'Create an account' : 'Sign in to continue'}
           </h2>
+          {!isRegister && (
+            <p className="text-[11px] mt-1" style={{ color: '#007AFF' }}>
+              Admin: <b>admin@mcp.com</b> / <b>admin123</b>
+            </p>
+          )}
 
           {/* Form */}
-          <form onSubmit={handleLogin} className="mt-8" id="login-form">
+          <form onSubmit={handleSubmit} className="mt-8" id="login-form">
+
+            {/* Name (Only for Register) */}
+            {isRegister && (
+              <div className="mb-4">
+                <label
+                  className="block text-[11px] uppercase tracking-wider font-semibold mb-1.5"
+                  style={{ color: '#C1C6D7' }}
+                >
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  disabled={loading}
+                  placeholder="Jane Doe"
+                  className="w-full h-[36px] rounded-lg px-3 text-[13px] font-sans outline-none disabled:opacity-50"
+                  style={{
+                    background: '#0E0E0E',
+                    color: '#E5E2E1',
+                    border: '0.5px solid #414755',
+                    transition: 'border-color 120ms ease',
+                  }}
+                  onFocus={(e) => { e.target.style.borderColor = '#007AFF'; }}
+                  onBlur={(e) => { e.target.style.borderColor = '#414755'; }}
+                />
+              </div>
+            )}
 
             {/* Email */}
             <div>
@@ -165,14 +207,16 @@ export default function Login({ onLoginSuccess }) {
                 >
                   Password
                 </label>
-                <a
-                  href="#"
-                  className="text-[11px] hover:underline"
-                  style={{ color: '#007AFF' }}
-                  tabIndex={0}
-                >
-                  Forgot password?
-                </a>
+                {!isRegister && (
+                  <a
+                    href="#"
+                    className="text-[11px] hover:underline"
+                    style={{ color: '#007AFF' }}
+                    tabIndex={0}
+                  >
+                    Forgot password?
+                  </a>
+                )}
               </div>
               <input
                 type="password"
@@ -190,39 +234,41 @@ export default function Login({ onLoginSuccess }) {
                 onFocus={(e) => { e.target.style.borderColor = '#007AFF'; }}
                 onBlur={(e) => { e.target.style.borderColor = '#414755'; }}
                 id="login-password"
-                autoComplete="current-password"
+                autoComplete={isRegister ? "new-password" : "current-password"}
               />
             </div>
 
             {/* Remember me */}
-            <div className="mt-3 flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-                disabled={loading}
-                className="login-checkbox"
-                id="login-remember"
-                style={{
-                  appearance: 'none',
-                  WebkitAppearance: 'none',
-                  width: '12px',
-                  height: '12px',
-                  border: '0.5px solid #414755',
-                  borderRadius: '3px',
-                  background: rememberMe ? '#007AFF' : '#0E0E0E',
-                  cursor: 'pointer',
-                  flexShrink: 0,
-                }}
-              />
-              <label
-                htmlFor="login-remember"
-                className="text-[11px] cursor-pointer select-none"
-                style={{ color: '#C1C6D7' }}
-              >
-                Keep me signed in
-              </label>
-            </div>
+            {!isRegister && (
+              <div className="mt-3 flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  disabled={loading}
+                  className="login-checkbox"
+                  id="login-remember"
+                  style={{
+                    appearance: 'none',
+                    WebkitAppearance: 'none',
+                    width: '12px',
+                    height: '12px',
+                    border: '0.5px solid #414755',
+                    borderRadius: '3px',
+                    background: rememberMe ? '#007AFF' : '#0E0E0E',
+                    cursor: 'pointer',
+                    flexShrink: 0,
+                  }}
+                />
+                <label
+                  htmlFor="login-remember"
+                  className="text-[11px] cursor-pointer select-none"
+                  style={{ color: '#C1C6D7' }}
+                >
+                  Keep me signed in
+                </label>
+              </div>
+            )}
 
             {/* Sign in button */}
             <button
@@ -263,7 +309,7 @@ export default function Login({ onLoginSuccess }) {
                   />
                 </svg>
               ) : (
-                'Sign In'
+                isRegister ? 'Create Account' : 'Sign In'
               )}
             </button>
           </form>
@@ -304,16 +350,28 @@ export default function Login({ onLoginSuccess }) {
             Continue with SSO
           </button>
 
-          {/* Footer */}
+          {/* Footer Toggle */}
           <div className="mt-8">
             <p className="text-[11px]" style={{ color: '#6C757D' }}>
-              Don't have an account?{' '}
+              {isRegister ? 'Already have an account?' : "Don't have an account?"}{' '}
               <a
                 href="#"
-                className="hover:underline"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setIsRegister(!isRegister);
+                  setAuthError(null);
+                  if (isRegister) {
+                    setEmail('admin@mcp.com');
+                    setPassword('admin123');
+                  } else {
+                    setEmail('');
+                    setPassword('');
+                  }
+                }}
+                className="hover:underline font-semibold"
                 style={{ color: '#007AFF' }}
               >
-                Request access
+                {isRegister ? 'Sign In' : 'Sign Up'}
               </a>
             </p>
             <p className="text-[10px] mt-2" style={{ color: '#414755' }}>

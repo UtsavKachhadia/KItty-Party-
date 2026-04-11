@@ -6,8 +6,11 @@ import env from '../../config/env.js';
  * Skips auth for GET /health.
  */
 export default function auth(req, res, next) {
-  // Skip auth for health check
-  if (req.method === 'GET' && req.path === '/health') {
+  // Skip auth for health check and login
+  if (
+    (req.method === 'GET' && req.path === '/health') ||
+    (req.method === 'POST' && req.path === '/auth/login')
+  ) {
     return next();
   }
 

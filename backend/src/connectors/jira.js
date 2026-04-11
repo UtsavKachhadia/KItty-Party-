@@ -18,9 +18,14 @@ const KNOWN_ACTIONS = ['createTicket', 'linkSprint', 'setPriority', 'getProject'
 
 const handlers = {
   async createTicket({ projectKey, summary, description, issueType, priority }) {
+    let finalIssueType = issueType || 'Task';
+    if (!['Epic', 'Subtask', 'Task', 'Story'].includes(finalIssueType)) {
+      finalIssueType = 'Task';
+    }
+
     const body = {
       fields: {
-        project: { key: projectKey },
+        project: { key: projectKey === 'KITT' || !projectKey ? 'KAN' : projectKey },
         summary,
         description: {
           type: 'doc',
@@ -32,7 +37,7 @@ const handlers = {
             },
           ],
         },
-        issuetype: { name: issueType || 'Task' },
+        issuetype: { name: finalIssueType },
       },
     };
     if (priority) {

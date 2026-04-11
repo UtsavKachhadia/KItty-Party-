@@ -7,6 +7,7 @@ import workflowRoutes from './routes/workflow.js';
 import executeRoutes from './routes/execute.js';
 import auditRoutes from './routes/audit.js';
 import connectorsRoutes from './routes/connectors.js';
+import authRoutes from './routes/auth.js';
 
 const app = express();
 
@@ -28,6 +29,7 @@ app.use('/api/workflow', workflowRoutes);
 app.use('/api', executeRoutes);
 app.use('/api/audit', auditRoutes);
 app.use('/api/connectors', connectorsRoutes);
+app.use('/api/auth', authRoutes);
 
 // ── Global error handler (must be last) ──
 app.use(errorHandler);
