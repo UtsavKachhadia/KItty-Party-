@@ -3,7 +3,7 @@ import env from '../../config/env.js';
 
 const octokit = new Octokit({ auth: env.GITHUB_TOKEN });
 
-const KNOWN_ACTIONS = ['createIssue', 'assignIssue', 'addLabel', 'createPR', 'listIssues'];
+const KNOWN_ACTIONS = ['createIssue', 'assignIssue', 'addLabel', 'createPR', 'listIssues', 'createRepo'];
 
 const handlers = {
   async createIssue({ owner, repo, title, body, labels }) {
@@ -45,6 +45,15 @@ const handlers = {
       body: body || '',
       head,
       base: base || 'main',
+    });
+    return res.data;
+  },
+
+  async createRepo({ name, description, isPrivate }) {
+    const res = await octokit.repos.createForAuthenticatedUser({
+      name,
+      description: description || '',
+      private: !!isPrivate,
     });
     return res.data;
   },

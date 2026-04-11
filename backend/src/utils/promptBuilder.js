@@ -29,6 +29,7 @@ Available connectors and their actions:
 - assignIssue: { owner, repo, issue_number, assignees }
 - addLabel: { owner, repo, issue_number, labels }
 - createPR: { owner, repo, title, body, head, base }
+- createRepo: { name, description, isPrivate }
 - listIssues: { owner, repo, state }
 
 **slack** (via @slack/web-api):
@@ -48,7 +49,9 @@ Rules:
 2. Set dependsOn to reference step IDs that must complete first.
 3. confidence should reflect how certain you are the step will succeed (0-1).
 4. If the user references a platform not listed, do NOT invent a connector — skip it and note in the description.
-5. Params should use reasonable defaults if the user doesn't specify (e.g. owner/repo can be placeholder strings the user will fill).
+5. Params should use reasonable defaults if the user doesn't specify:
+    - owners: For GitHub actions, the default owner is 'harshinihn08' unless specified otherwise.
+    - project keys: For Jira actions, Use 'KAN' as the default project key if project is not specified or invalid.
 6. Output ONLY the JSON object. Nothing else.`;
 
   const userPrompt = `User instruction: "${userInput}"
