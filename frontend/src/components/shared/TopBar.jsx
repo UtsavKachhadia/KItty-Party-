@@ -22,9 +22,12 @@ export default function TopBar() {
   );
 
   const connectorIcons = [
-    { key: 'github', icon: 'hub', label: 'GitHub' },
-    { key: 'slack', icon: 'forum', label: 'Slack' },
-    { key: 'jira', icon: 'task_alt', label: 'Jira' },
+    { key: 'github', logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/slack/slack-original.svg',
+    url: 'https://slack.com' , label: 'GitHub' },
+    { key: 'slack', logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/slack/slack-original.svg',
+    url: 'https://slack.com' , label: 'Slack' },
+    { key: 'jira', logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/jira/jira-original.svg',
+    url: 'https://www.atlassian.com/software/jira' , label: 'Jira' },
   ];
 
   const statusLabel =
@@ -55,15 +58,15 @@ export default function TopBar() {
       <div className="flex items-center gap-4">
         {/* Connector health icons */}
         <div className="flex items-center gap-3">
-          {connectorIcons.map(({ key, icon, label }) => (
+          {connectorIcons.map(({ key, label , logo , url}) => (
             <div
+            
               key={key}
+              href={url}
               className="flex items-center gap-1.5 group cursor-default"
               title={`${label}: ${health[key]?.configured ? 'Connected' : 'Not configured'}`}
             >
-              <span className="material-symbols-outlined text-[20px] text-secondary group-hover:text-on-surface-variant transition-colors">
-                {icon}
-              </span>
+              <img src={logo} alt={label} className="w-5 h-5 object-contain"/>
               <span
                 className={`w-[6px] h-[6px] rounded-full ${
                   health[key]?.configured ? 'bg-success' : 'bg-error'

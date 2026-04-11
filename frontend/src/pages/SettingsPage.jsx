@@ -10,19 +10,23 @@ const CONNECTORS = [
   {
     key: 'github',
     label: 'GitHub',
-    icon: 'hub',
+    logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/github/github-original.svg',
+    url: 'https://github.com',
     fields: [{ name: 'token', label: 'Personal Access Token', type: 'password' }],
   },
   {
     key: 'slack',
     label: 'Slack',
-    icon: 'forum',
+    logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/slack/slack-original.svg',
+    url: 'https://slack.com' ,
     fields: [{ name: 'token', label: 'Bot Token', type: 'password' }],
   },
   {
     key: 'jira',
     label: 'Jira',
-    icon: 'task_alt',
+    logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/jira/jira-original.svg',
+    url: 'https://www.atlassian.com/software/jira' ,
+
     fields: [
       { name: 'apiKey', label: 'API Key', type: 'password' },
       { name: 'domain', label: 'Domain', type: 'text', placeholder: 'yourorg.atlassian.net' },
