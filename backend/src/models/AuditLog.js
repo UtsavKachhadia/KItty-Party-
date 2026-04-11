@@ -16,6 +16,7 @@ const auditLogSchema = new mongoose.Schema({
   errorMessage: { type: String, default: null },
   durationMs: { type: Number, default: 0 },
   timestamp: { type: Date, default: Date.now },
+  escalated: { type: Boolean, default: false },
 });
 
 const AuditLog = mongoose.model('AuditLog', auditLogSchema);

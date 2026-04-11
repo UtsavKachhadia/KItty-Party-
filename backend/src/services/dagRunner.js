@@ -179,11 +179,10 @@ export async function runDAG(run, io) {
         emitStepCompleted(io, runId, stepId, result.data);
       } else {
         // ── IFR: handle failure ──
-        const retryFn = () => connector.execute(step.action, step.params);
-        const ifrResult = await handleFailure(result.error || result, step, retryFn);
+        const ifrResult = await handleFailure(result.error || result, step, run, io);
 
-        if (ifrResult.tier === 1 && ifrResult.retried && ifrResult.retryResult?.success) {
-          // Tier 1 retry succeeded
+        if (ifrResult.resolved && ifrResult.retryResult?.success) {
+          // Tier 1 retry or Tier 2 auto-fix succeeded
           step.status = 'completed';
           step.result = ifrResult.retryResult.data;
           step.endedAt = new Date();
@@ -197,21 +196,9 @@ export async function runDAG(run, io) {
               },
             }
           );
-          await AuditLog.create({
-            runId: run._id,
-            stepId,
-            connector: step.connector,
-            action: step.action,
-            request: step.params,
-            response: ifrResult.retryResult.data,
-            success: true,
-            errorMessage: null,
-            durationMs: Date.now() - startTime,
-            timestamp: new Date(),
-          });
           emitStepCompleted(io, runId, stepId, ifrResult.retryResult.data);
         } else {
-          // Step failed
+          // Step failed — all IFR tiers exhausted
           const diagnosis = ifrResult.diagnosis
             ? `${ifrResult.diagnosis}. Suggestion: ${ifrResult.suggestion || 'N/A'}`
             : null;
