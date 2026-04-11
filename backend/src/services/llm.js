@@ -105,3 +105,32 @@ export async function diagnoseError(error, stepContext) {
     };
   }
 }
+
+/**
+ * Generic single-turn LLM call. Returns raw string response.
+ * Use for classification, diagnosis, and summarization tasks.
+ */
+export async function callLLM(systemPrompt, userContent, maxTokens = 300) {
+  const response = await axios.post(
+    GROQ_URL,
+    {
+      model: MODEL,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userContent },
+      ],
+      temperature: 0.1,
+      max_tokens: maxTokens,
+      response_format: { type: 'json_object' },
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${env.GROQ_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      timeout: 15000,
+    }
+  );
+
+  return response.data.choices?.[0]?.message?.content || '';
+}

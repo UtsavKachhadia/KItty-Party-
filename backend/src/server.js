@@ -17,6 +17,14 @@ app.set('io', io);
 io.on('connection', (socket) => {
   console.log(`🔌 Socket connected: ${socket.id}`);
 
+  const { runId, userId } = socket.handshake.query;
+
+  // Run-scoped room (existing pattern)
+  if (runId) socket.join(runId);
+
+  // User-scoped room (for delegation request notifications)
+  if (userId) socket.join(`user:${userId}`);
+
   socket.on('disconnect', (reason) => {
     console.log(`🔌 Socket disconnected: ${socket.id} (${reason})`);
   });

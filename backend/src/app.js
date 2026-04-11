@@ -9,6 +9,8 @@ import executeRoutes from './routes/execute.js';
 import auditRoutes from './routes/audit.js';
 import connectorsRoutes from './routes/connectors.js';
 import chatRoutes from './routes/chat.js';
+import requestsRoutes from './routes/requests.js';
+import credentialsRoutes from './routes/credentials.js';
 
 const app = express();
 
@@ -31,8 +33,11 @@ app.use('/api/workflow', requireAuth, workflowRoutes);
 app.use('/api', requireAuth, executeRoutes);
 app.use('/api/audit', requireAuth, auditRoutes);
 app.use('/api/chat', requireAuth, chatRoutes);
+app.use('/api/requests', requestsRoutes);       // Phase 2: delegation requests (auth applied inside router)
+app.use('/api/credentials', credentialsRoutes);  // Phase 2: credential management (auth applied inside router)
 
 // ── Global error handler (must be last) ──
 app.use(errorHandler);
 
 export default app;
+
