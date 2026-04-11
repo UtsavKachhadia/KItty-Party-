@@ -41,7 +41,30 @@ router.post('/workflow/replay/:runId', requireAuth, async (req, res, next) => {
       endedAt: null,
     }));
 
+    // Fetch user tokens dynamically
+    const { getUserTokens } = await import('../services/credentialService.js');
+    const userTokens = await getUserTokens(req.user.userId);
+    const userContext = { email: req.user.email, tokens: userTokens };
+
+    // Pre-Execution Validation
+    const { getConnectorHealth } = await import('../connectors/index.js');
+    const availableConnectors = getConnectorHealth(userContext);
+    const missingConnectors = new Set();
+    for (const step of original.steps) {
+      if (!availableConnectors[step.connector]?.configured) {
+        missingConnectors.add(step.connector);
+      }
+    }
+    if (missingConnectors.size > 0) {
+      const missing = Array.from(missingConnectors).join(', ');
+      return res.status(400).json({
+        error: `${missing} token not configured for this user`,
+        code: 'MISSING_CREDENTIALS',
+      });
+    }
+
     const newRun = await Run.create({
+      userId: req.user.userId,
       workflowId: original.workflowId,
       dag: original.dag,
       status: 'pending',
@@ -49,11 +72,8 @@ router.post('/workflow/replay/:runId', requireAuth, async (req, res, next) => {
       userInput: original.userInput,
     });
 
-    // Fetch full user document for connector credentials
-    const fullUser = await User.findById(req.user.userId).lean();
-
     const io = req.app.get('io');
-    runDAG(newRun, io, fullUser).catch((err) => {
+    runDAG(newRun, io, userContext).catch((err) => {
       console.error(`Background replay run error: ${err.message}`);
     });
 

@@ -45,12 +45,38 @@ export default function SettingsPage() {
   const handleTest = async (connectorKey) => {
     setTesting((prev) => ({ ...prev, [connectorKey]: true }));
     try {
-      const res = await api.get('/connectors/health');
-      setHealth(res.data);
-    } catch {
-      // keep previous health state
+      const payload = formData[connectorKey] || {};
+      const res = await api.post(`/connectors/test/${connectorKey}`, payload);
+      
+      if (res.data.success) {
+        // Automatically save the successful configuration
+        await api.post('/connectors/save', { [connectorKey]: payload });
+        
+        // Refresh overall health status
+        const healthRes = await api.get('/connectors/health');
+        setHealth(healthRes.data);
+        
+        alert(`${res.data.message}\n\nConfiguration has been verified and saved automatically.`);
+      } else {
+        alert('Test failed: ' + res.data.message);
+      }
+    } catch (err) {
+      const errMsg = err.response?.data?.message || err.message;
+      alert('Error testing connection: ' + errMsg);
     } finally {
       setTesting((prev) => ({ ...prev, [connectorKey]: false }));
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      await api.post('/connectors/save', formData);
+      alert('Settings saved successfully!');
+      
+      const res = await api.get('/connectors/health');
+      setHealth(res.data);
+    } catch (err) {
+      alert('Failed to save settings');
     }
   };
 
@@ -167,7 +193,10 @@ export default function SettingsPage() {
           <button className="text-secondary text-[13px] hover:text-on-surface-variant transition-colors">
             Discard changes
           </button>
-          <button className="bg-primary text-on-primary rounded-lg font-bold text-[13px] px-4 py-2 hover:brightness-110 transition-all active:scale-[0.97]">
+          <button 
+            onClick={handleSave}
+            className="bg-primary text-on-primary rounded-lg font-bold text-[13px] px-4 py-2 hover:brightness-110 transition-all active:scale-[0.97]"
+          >
             Save settings
           </button>
         </div>

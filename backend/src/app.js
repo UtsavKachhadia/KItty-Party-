@@ -8,6 +8,7 @@ import workflowRoutes from './routes/workflow.js';
 import executeRoutes from './routes/execute.js';
 import auditRoutes from './routes/audit.js';
 import connectorsRoutes from './routes/connectors.js';
+import chatRoutes from './routes/chat.js';
 
 const app = express();
 
@@ -23,13 +24,13 @@ app.get('/health', (req, res) => {
 
 // ── Public routes (no auth required) ──
 app.use('/api/auth', authRoutes);
-app.use('/api/connectors', connectorsRoutes);  // health + test endpoints
 
-// ── Protected routes (JWT auth applied per-route via requireAuth) ──
-// requireAuth is applied inside each route file for granular control
-app.use('/api/workflow', workflowRoutes);
-app.use('/api', executeRoutes);
+// ── Protected routes (JWT auth required) ──
+app.use('/api/connectors', requireAuth, connectorsRoutes);
+app.use('/api/workflow', requireAuth, workflowRoutes);
+app.use('/api', requireAuth, executeRoutes);
 app.use('/api/audit', requireAuth, auditRoutes);
+app.use('/api/chat', requireAuth, chatRoutes);
 
 // ── Global error handler (must be last) ──
 app.use(errorHandler);

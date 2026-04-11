@@ -30,18 +30,23 @@ Available connectors and their actions:
 - addLabel: { owner, repo, issue_number, labels }
 - createPR: { owner, repo, title, body, head, base }
 - listIssues: { owner, repo, state }
+- createRepo: { name, description, private }
+- createRepoInOrg: { org, name, description, private }
+- getCurrentUser: {}
 
 **slack** (via @slack/web-api):
 - postMessage: { channel, text, blocks? }
 - mentionUser: { channel, userId, text }
 - lookupChannel: { name }
 - getUser: { email }
+- getAuthInfo: {}
 
 **jira** (via Jira Cloud REST):
 - createTicket: { projectKey, summary, description, issueType, priority }
 - linkSprint: { issueKey, sprintId }
 - setPriority: { issueKey, priority }
 - getProject: { projectKey }
+- getMyself: {}
 
 Rules:
 1. Use ONLY the connectors and actions listed above.

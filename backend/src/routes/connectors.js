@@ -3,17 +3,42 @@ import { Octokit } from '@octokit/rest';
 import { WebClient } from '@slack/web-api';
 import axios from 'axios';
 import { getConnectorHealth } from '../connectors/index.js';
+import { getUserTokens, saveUserTokens } from '../services/credentialService.js';
+import requireAuth from '../middleware/auth.js';
 
 const router = Router();
 
+// Apply auth middleware to all connector routes
+router.use(requireAuth);
+
 /**
  * GET /api/connectors/health
- * Returns configuration status and available actions for each connector.
+ * Returns configuration status and available actions for each connector for the logged-in user.
  */
 router.get('/health', async (req, res, next) => {
   try {
-    const health = getConnectorHealth();
+    const userTokens = await getUserTokens(req.user.userId);
+    const health = getConnectorHealth({ email: req.user.email, tokens: userTokens });
     return res.json(health);
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * POST /api/connectors/save
+ * Saves user connector configurations.
+ */
+router.post('/save', async (req, res, next) => {
+  try {
+    const { github, slack, jira } = req.body;
+    await saveUserTokens(req.user.userId, {
+      github: github?.token,
+      slack: slack?.token,
+      jiraKey: jira?.apiKey,
+      jiraDomain: jira?.domain,
+    });
+    return res.json({ success: true, message: 'Settings saved.' });
   } catch (err) {
     next(err);
   }
@@ -80,8 +105,8 @@ router.post('/test/jira', async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'API key and domain are required' });
     }
 
-    // Use provided email or a fallback for testing
-    const authEmail = email || 'test@test.com';
+    // Use requested email or fallback to logged in user's email
+    const authEmail = email || req.user.email;
     const authHeader = 'Basic ' + Buffer.from(`${authEmail}:${apiKey}`).toString('base64');
 
     let baseURL = domain;

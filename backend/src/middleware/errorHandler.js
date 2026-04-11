@@ -2,24 +2,38 @@ import env from '../../config/env.js';
 
 /**
  * Global Express error handler.
- * Formats: { error, code, details? }
- * Shows stack/details only in development.
+ * Formats: { success: false, message, code? }
+ * Hides raw error details in production.
  */
 export default function errorHandler(err, req, res, _next) {
-  console.error('🔴 Unhandled error:', err);
-
-  const status = err.status || err.statusCode || 500;
-  const response = {
-    error: err.message || 'Internal Server Error',
-    code: err.code || 'INTERNAL_ERROR',
-  };
-
+  console.error('🔴 Unhandled error:', err.message);
   if (env.NODE_ENV === 'development') {
-    response.details = {
-      stack: err.stack,
-      ...(err.details || {}),
-    };
+    console.error(err.stack);
   }
 
-  res.status(status).json(response);
+  const status = err.status || err.statusCode || 500;
+
+  // Mongoose validation error — user-friendly message
+  if (err.name === 'ValidationError') {
+    const fields = Object.values(err.errors).map((e) => e.message).join(', ');
+    return res.status(400).json({
+      success: false,
+      message: `Validation failed: ${fields}`,
+    });
+  }
+
+  // Duplicate key error (e.g. unique email)
+  if (err.code === 11000) {
+    const field = Object.keys(err.keyValue || {})[0] || 'field';
+    return res.status(409).json({
+      success: false,
+      message: `A record with this ${field} already exists.`,
+    });
+  }
+
+  // Generic error — never expose stack to client
+  res.status(status).json({
+    success: false,
+    message: env.NODE_ENV === 'development' ? err.message : 'Internal server error.',
+  });
 }

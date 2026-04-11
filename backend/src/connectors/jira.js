@@ -1,21 +1,24 @@
 import axios from 'axios';
 
-const KNOWN_ACTIONS = ['createTicket', 'linkSprint', 'setPriority', 'getProject'];
+const KNOWN_ACTIONS = ['createTicket', 'linkSprint', 'setPriority', 'getProject', 'getMyself'];
 
 /**
  * Creates an Axios client for Jira from user-specific credentials.
- * Uses user.email + user.connectors.jira.apiKey for Basic auth.
- * Uses user.connectors.jira.domain as the base URL.
+ * Uses user.email + tokens.jira.key for Basic auth.
+ * Uses tokens.jira.domain as the base URL.
  */
-function getJiraClient(user) {
-  const jiraConfig = user?.connectors?.jira;
-  if (!jiraConfig?.apiKey || !jiraConfig?.domain) {
+function getJiraClient(context) {
+  const jiraConfig = context?.tokens?.jira;
+  if (!jiraConfig?.key || !jiraConfig?.domain) {
     throw new Error('Jira credentials not configured for this user');
   }
 
-  const email = user.email;
+  const email = context?.email;
+  if (!email) {
+    throw new Error('User email required for Jira authentication');
+  }
   const authHeader =
-    'Basic ' + Buffer.from(`${email}:${jiraConfig.apiKey}`).toString('base64');
+    'Basic ' + Buffer.from(`${email}:${jiraConfig.key}`).toString('base64');
 
   // Normalize domain — ensure it starts with https://
   let baseURL = jiraConfig.domain;
@@ -35,6 +38,11 @@ function getJiraClient(user) {
 }
 
 const handlers = {
+  async getMyself(client) {
+    const res = await client.get('/rest/api/3/myself');
+    return res.data;
+  },
+
   async createTicket(client, { projectKey, summary, description, issueType, priority }) {
     const body = {
       fields: {
@@ -90,21 +98,36 @@ const jiraConnector = {
         return { success: false, error: `Unknown Jira action: ${action}` };
       }
       const client = getJiraClient(user);
-      const data = await handlers[action](client, params);
+      const data = await handlers[action](client, params || {});
       return { success: true, data };
     } catch (err) {
-      const msg =
-        err.response?.data?.errorMessages?.join('; ') ||
-        err.response?.data?.errors
-          ? JSON.stringify(err.response.data.errors)
-          : err.message || 'Jira API call failed';
-      return { success: false, error: msg, status: err.response?.status };
+      console.error(`❌ Jira Action Failed [${action}]:`, err.message);
+
+      let errorMsg = err.message || 'Jira API call failed';
+      const status = err.response?.status;
+
+      if (status === 401) {
+        errorMsg = "Unauthorized. Please check your Jira email and API Key (API Token) in settings.";
+      } else if (status === 403) {
+        errorMsg = "Forbidden. Ensure your user has permissions to access this Jira project or feature.";
+      } else if (err.response?.data) {
+        errorMsg =
+          err.response.data.errorMessages?.join('; ') ||
+          (err.response.data.errors ? JSON.stringify(err.response.data.errors) : errorMsg);
+      }
+
+      return { 
+        success: false, 
+        error: errorMsg, 
+        status,
+        details: err.response?.data || null 
+      };
     }
   },
 
-  isConfigured(user) {
-    if (user) return Boolean(user?.connectors?.jira?.apiKey && user?.connectors?.jira?.domain);
-    return true; // Connector code is always available
+  isConfigured(context) {
+    if (context) return Boolean(context?.tokens?.jira?.key && context?.tokens?.jira?.domain);
+    return true; 
   },
 };
 

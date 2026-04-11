@@ -1,12 +1,12 @@
 import { WebClient } from '@slack/web-api';
 
-const KNOWN_ACTIONS = ['postMessage', 'mentionUser', 'lookupChannel', 'getUser'];
+const KNOWN_ACTIONS = ['postMessage', 'mentionUser', 'lookupChannel', 'getUser', 'getAuthInfo'];
 
 /**
  * Creates a Slack WebClient from user-specific token.
  */
-function getSlackClient(user) {
-  const token = user?.connectors?.slack?.token;
+function getSlackClient(context) {
+  const token = context?.tokens?.slack;
   if (!token) {
     throw new Error('Slack token not configured for this user');
   }
@@ -14,6 +14,10 @@ function getSlackClient(user) {
 }
 
 const handlers = {
+  async getAuthInfo(web) {
+    return await web.auth.test();
+  },
+
   async postMessage(web, { channel, text, blocks }) {
     const args = { channel, text };
     if (blocks) args.blocks = blocks;
@@ -53,19 +57,36 @@ const slackConnector = {
         return { success: false, error: `Unknown Slack action: ${action}` };
       }
       const web = getSlackClient(user);
-      const data = await handlers[action](web, params);
+      const data = await handlers[action](web, params || {});
       return { success: true, data };
     } catch (err) {
+      console.error(`❌ Slack Action Failed [${action}]:`, err.message);
+      
+      let errorMsg = err.message || 'Slack API call failed';
+      
+      // Provide helpful diagnoses for common Slack error codes
+      if (err.code === 'slack_webapi_platform_error') {
+        const platformError = err.data?.error;
+        if (platformError === 'invalid_auth') {
+          errorMsg = "Invalid Slack token. Please check your Bot User OAuth Token in settings.";
+        } else if (platformError === 'missing_scope') {
+          errorMsg = `Missing required Slack scopes (e.g., chat:write, users:read). Error: ${err.data.needed}`;
+        } else if (platformError === 'not_in_channel') {
+          errorMsg = "The bot is not in the specified channel. Please invite it first using /invite @botname.";
+        }
+      }
+
       return {
         success: false,
-        error: err.message || 'Slack API call failed',
+        error: errorMsg,
+        data: err.data || null
       };
     }
   },
 
-  isConfigured(user) {
-    if (user) return Boolean(user?.connectors?.slack?.token);
-    return true; // Connector code is always available
+  isConfigured(context) {
+    if (context) return Boolean(context?.tokens?.slack);
+    return true; 
   },
 };
 

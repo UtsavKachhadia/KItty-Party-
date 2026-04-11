@@ -24,14 +24,34 @@ router.post('/run', requireAuth, async (req, res, next) => {
       });
     }
 
-    // 1. Plan DAG via LLM
+    // 1. Fetch user tokens dynamically
+    const { getUserTokens } = await import('../services/credentialService.js');
+    const userTokens = await getUserTokens(req.user.userId);
+    const userContext = { email: req.user.email, tokens: userTokens };
+
+    // 2. Plan DAG via LLM
     const rawDAG = await planWorkflow(userInput);
 
-    // 2. Score confidence
-    const availableConnectors = getConnectorHealth();
+    // 3. Pre-Execution Validation
+    const availableConnectors = getConnectorHealth(userContext);
+    const missingConnectors = new Set();
+    for (const step of rawDAG.steps) {
+      if (!availableConnectors[step.connector]?.configured) {
+        missingConnectors.add(step.connector);
+      }
+    }
+    if (missingConnectors.size > 0) {
+      const missing = Array.from(missingConnectors).join(', ');
+      return res.status(400).json({
+        error: `${missing} token not configured for this user`,
+        code: 'MISSING_CREDENTIALS',
+      });
+    }
+
+    // 4. Score confidence
     const scoredDAG = scoreDAG(rawDAG, availableConnectors);
 
-    // 3. Apply optional confidence threshold override
+    // 5. Apply optional confidence threshold override
     if (options?.confidenceThreshold) {
       const threshold = parseFloat(options.confidenceThreshold);
       for (const step of scoredDAG.steps) {
@@ -40,24 +60,22 @@ router.post('/run', requireAuth, async (req, res, next) => {
       }
     }
 
-    // 4. Create Run document
+    // 6. Create Run document
     const run = await Run.create({
+      userId: req.user.userId,
       dag: scoredDAG,
       status: 'pending',
       steps: scoredDAG.steps,
       userInput,
     });
 
-    // 5. Fetch full user document for connector credentials
-    const fullUser = await User.findById(req.user.userId).lean();
-
-    // 6. Start DAG execution — non-blocking
+    // 7. Start DAG execution — non-blocking
     const io = req.app.get('io');
-    runDAG(run, io, fullUser).catch((err) => {
+    runDAG(run, io, userContext).catch((err) => {
       console.error(`Background DAG run error: ${err.message}`);
     });
 
-    // 6. Return immediately
+    // 8. Return immediately
     return res.status(202).json({
       runId: run._id,
       dag: scoredDAG,
@@ -74,7 +92,7 @@ router.post('/run', requireAuth, async (req, res, next) => {
  */
 router.get('/history', requireAuth, async (req, res, next) => {
   try {
-    const runs = await Run.find()
+    const runs = await Run.find({ userId: req.user.userId })
       .sort({ startedAt: -1 })
       .limit(20)
       .lean();

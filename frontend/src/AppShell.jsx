@@ -7,10 +7,11 @@ import WorkflowPage from './pages/WorkflowPage';
 import HistoryPage from './pages/HistoryPage';
 import SettingsPage from './pages/SettingsPage';
 import ApprovalModal from './components/modals/ApprovalModal';
+import Chatbot from './components/shared/Chatbot';
 
 /**
  * Authenticated application shell.
- * Composes: TopBar + Sidebar + active page + StatusBar + ApprovalModal overlay.
+ * Composes: TopBar + Sidebar + active page + StatusBar + Chatbot + ApprovalModal.
  * Only rendered after successful login.
  */
 export default function AppShell({ onLogout }) {
@@ -41,6 +42,9 @@ export default function AppShell({ onLogout }) {
 
       {/* Status bar */}
       <StatusBar />
+
+      {/* Floating chatbot */}
+      <Chatbot />
 
       {/* Approval modal overlay */}
       {approvalOpen && <ApprovalModal />}

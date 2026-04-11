@@ -129,6 +129,7 @@ export async function runDAG(run, io, user) {
           { $set: { 'steps.$.status': 'failed', 'steps.$.error': errMsg, 'steps.$.endedAt': step.endedAt } }
         );
         await AuditLog.create({
+          userId: run.userId,
           runId: run._id,
           stepId,
           connector: step.connector,
@@ -150,6 +151,7 @@ export async function runDAG(run, io, user) {
 
       // ── Audit log ──
       await AuditLog.create({
+        userId: run.userId,
         runId: run._id,
         stepId,
         connector: step.connector,
@@ -198,6 +200,7 @@ export async function runDAG(run, io, user) {
             }
           );
           await AuditLog.create({
+            userId: run.userId,
             runId: run._id,
             stepId,
             connector: step.connector,

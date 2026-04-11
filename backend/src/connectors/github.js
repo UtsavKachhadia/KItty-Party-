@@ -1,19 +1,38 @@
 import { Octokit } from '@octokit/rest';
 
-const KNOWN_ACTIONS = ['createIssue', 'assignIssue', 'addLabel', 'createPR', 'listIssues'];
+const KNOWN_ACTIONS = [
+  'createIssue', 
+  'assignIssue', 
+  'addLabel', 
+  'createPR', 
+  'listIssues', 
+  'createRepo', 
+  'createRepoInOrg',
+  'getCurrentUser'
+];
 
 /**
  * Creates an Octokit client from user-specific GitHub token.
  */
-function getOctokitClient(user) {
-  const token = user?.connectors?.github?.token;
+function getOctokitClient(context) {
+  const token = context?.tokens?.github;
   if (!token) {
     throw new Error('GitHub token not configured for this user');
   }
-  return new Octokit({ auth: token });
+  return new Octokit({ 
+    auth: token,
+    headers: {
+      accept: 'application/vnd.github+json'
+    }
+  });
 }
 
 const handlers = {
+  async getCurrentUser(octokit) {
+    const res = await octokit.users.getAuthenticated();
+    return res.data;
+  },
+
   async createIssue(octokit, { owner, repo, title, body, labels }) {
     const res = await octokit.issues.create({
       owner,
@@ -65,6 +84,27 @@ const handlers = {
     });
     return res.data;
   },
+
+  async createRepo(octokit, { name, description, private: isPrivate }) {
+    // Note: creates repo for the authenticated user (POST /user/repos)
+    const res = await octokit.repos.createForAuthenticatedUser({
+      name,
+      description: description || '',
+      private: Boolean(isPrivate),
+    });
+    return res.data;
+  },
+
+  async createRepoInOrg(octokit, { org, name, description, private: isPrivate }) {
+    // Note: creates repo in an organization (POST /orgs/{org}/repos)
+    const res = await octokit.repos.createInOrg({
+      org,
+      name,
+      description: description || '',
+      private: Boolean(isPrivate),
+    });
+    return res.data;
+  },
 };
 
 const githubConnector = {
@@ -77,20 +117,27 @@ const githubConnector = {
         return { success: false, error: `Unknown GitHub action: ${action}` };
       }
       const octokit = getOctokitClient(user);
-      const data = await handlers[action](octokit, params);
+      const data = await handlers[action](octokit, params || {});
       return { success: true, data };
     } catch (err) {
+      console.error(`❌ GitHub Action Failed [${action}]:`, err.message);
+      
+      // Handle cases where token might be classic but lacks correct scope
+      const errorMsg = err.status === 404 
+        ? `Resource not found or insufficient token permissions (404). Ensure your PAT has 'repo' scope (classic) or 'Administration: Read & Write' (fine-grained).`
+        : err.message || 'GitHub API call failed';
+
       return {
         success: false,
-        error: err.message || 'GitHub API call failed',
+        error: errorMsg,
         status: err.status,
       };
     }
   },
 
-  isConfigured(user) {
-    if (user) return Boolean(user?.connectors?.github?.token);
-    return true; // Connector code is always available
+  isConfigured(context) {
+    if (context) return Boolean(context?.tokens?.github);
+    return true; 
   },
 };
 

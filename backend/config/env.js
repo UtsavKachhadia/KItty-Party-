@@ -6,6 +6,7 @@ const required = [
   'MONGODB_URI',
   'GROQ_API_KEY',
   'JWT_SECRET',
+  'CREDENTIAL_ENCRYPTION_KEY',
 ];
 
 // Accept either MONGODB_URI or MONGO_URI
@@ -27,6 +28,7 @@ const env = Object.freeze({
   UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN || '',
   GROQ_API_KEY: process.env.GROQ_API_KEY,
   JWT_SECRET: process.env.JWT_SECRET,
+  CREDENTIAL_ENCRYPTION_KEY: process.env.CREDENTIAL_ENCRYPTION_KEY,
   APP_API_KEY: process.env.APP_API_KEY || '',
   NODE_ENV: process.env.NODE_ENV || 'development',
 });
