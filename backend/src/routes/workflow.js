@@ -4,12 +4,14 @@ import { planWorkflow } from '../services/llm.js';
 import { scoreDAG } from '../services/confidenceScorer.js';
 import { runDAG } from '../services/dagRunner.js';
 import { getConnectorHealth } from '../connectors/index.js';
+import { getDecryptedCredentials } from '../services/credentialService.js';
 
 const router = Router();
 
 /**
  * POST /api/workflow/run
  * Takes a natural language instruction, plans a DAG, scores it, and starts execution.
+ * Requires authentication. Uses the authenticated user's credentials.
  */
 router.post('/run', async (req, res, next) => {
   try {
@@ -22,11 +24,14 @@ router.post('/run', async (req, res, next) => {
       });
     }
 
+    // Fetch user's decrypted credentials
+    const userCredentials = await getDecryptedCredentials(req.userId);
+
     // 1. Plan DAG via LLM
     const rawDAG = await planWorkflow(userInput);
 
     // 2. Score confidence
-    const availableConnectors = getConnectorHealth();
+    const availableConnectors = getConnectorHealth(userCredentials);
     const scoredDAG = scoreDAG(rawDAG, availableConnectors);
 
     // 3. Apply optional confidence threshold override
@@ -38,17 +43,18 @@ router.post('/run', async (req, res, next) => {
       }
     }
 
-    // 4. Create Run document
+    // 4. Create Run document with userId
     const run = await Run.create({
       dag: scoredDAG,
       status: 'pending',
       steps: scoredDAG.steps,
       userInput,
+      userId: req.userId,
     });
 
-    // 5. Start DAG execution — non-blocking
+    // 5. Start DAG execution — non-blocking with user credentials
     const io = req.app.get('io');
-    runDAG(run, io).catch((err) => {
+    runDAG(run, io, userCredentials).catch((err) => {
       console.error(`Background DAG run error: ${err.message}`);
     });
 
@@ -65,11 +71,11 @@ router.post('/run', async (req, res, next) => {
 
 /**
  * GET /api/workflow/history
- * Returns the last 20 runs sorted by startedAt desc.
+ * Returns the last 20 runs for the authenticated user, sorted by startedAt desc.
  */
 router.get('/history', async (req, res, next) => {
   try {
-    const runs = await Run.find()
+    const runs = await Run.find({ userId: req.userId })
       .sort({ startedAt: -1 })
       .limit(20)
       .lean();

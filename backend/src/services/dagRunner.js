@@ -1,5 +1,5 @@
 import { topologicalSort } from '../utils/dagUtils.js';
-import connectors from '../connectors/index.js';
+import { getConnectors } from '../connectors/index.js';
 import AuditLog from '../models/AuditLog.js';
 import Run from '../models/Run.js';
 import redis from '../../config/redis.js';
@@ -46,8 +46,12 @@ async function waitForApproval(runId, stepId) {
 /**
  * Executes a full DAG run. Updates Run document and emits socket events throughout.
  * This function NEVER throws — all errors are caught and emitted.
+ * @param {Object} run - Mongoose Run document
+ * @param {Object} io - Socket.io server instance
+ * @param {Object} userCredentials - Decrypted user credentials for connector instantiation
  */
-export async function runDAG(run, io) {
+export async function runDAG(run, io, userCredentials) {
+  const userConnectors = getConnectors(userCredentials);
   const runId = run._id.toString();
 
   try {
@@ -116,7 +120,7 @@ export async function runDAG(run, io) {
       }
 
       // ── Execute step via connector ──
-      const connector = connectors[step.connector];
+      const connector = userConnectors[step.connector];
       if (!connector) {
         const errMsg = `Connector "${step.connector}" not found`;
         step.status = 'failed';
@@ -179,7 +183,7 @@ export async function runDAG(run, io) {
         emitStepCompleted(io, runId, stepId, result.data);
       } else {
         // ── IFR: handle failure ──
-        const ifrResult = await handleFailure(result.error || result, step, run, io);
+        const ifrResult = await handleFailure(result.error || result, step, run, io, userCredentials);
 
         if (ifrResult.resolved && ifrResult.retryResult?.success) {
           // Tier 1 retry or Tier 2 auto-fix succeeded

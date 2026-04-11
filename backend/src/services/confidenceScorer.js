@@ -1,4 +1,3 @@
-import { getConnector } from '../connectors/index.js';
 
 /**
  * Known actions per connector for validation.

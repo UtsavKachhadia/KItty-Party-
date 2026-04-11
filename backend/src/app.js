@@ -1,13 +1,14 @@
 import express from 'express';
 import cors from 'cors';
 import logger from './middleware/logger.js';
-import auth from './middleware/auth.js';
+import requireAuth from './middleware/requireAuth.js';
 import errorHandler from './middleware/errorHandler.js';
+import authRoutes from './routes/auth.js';
 import workflowRoutes from './routes/workflow.js';
 import executeRoutes from './routes/execute.js';
 import auditRoutes from './routes/audit.js';
 import connectorsRoutes from './routes/connectors.js';
-import authRoutes from './routes/auth.js';
+import chatRoutes from './routes/chat.js';
 
 const app = express();
 
@@ -21,18 +22,15 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', uptime: process.uptime(), timestamp: new Date().toISOString() });
 });
 
-// ── Auth for all /api/* routes ──
-app.use('/api', auth);
-
-import chatRoutes from './routes/chat.js';
-
-// ── Mount routes ──
-app.use('/api/workflow', workflowRoutes);
-app.use('/api', executeRoutes);
-app.use('/api/audit', auditRoutes);
-app.use('/api/connectors', connectorsRoutes);
+// ── Public routes (no auth required) ──
 app.use('/api/auth', authRoutes);
-app.use('/api/chat', chatRoutes);
+
+// ── Protected routes (JWT auth required) ──
+app.use('/api/workflow', requireAuth, workflowRoutes);
+app.use('/api', requireAuth, executeRoutes);
+app.use('/api/audit', requireAuth, auditRoutes);
+app.use('/api/connectors', requireAuth, connectorsRoutes);
+app.use('/api/chat', requireAuth, chatRoutes);
 
 // ── Global error handler (must be last) ──
 app.use(errorHandler);

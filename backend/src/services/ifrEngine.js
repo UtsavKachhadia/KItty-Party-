@@ -1,6 +1,6 @@
 import env from '../../config/env.js';
 import AuditLog from '../models/AuditLog.js';
-import connectors from '../connectors/index.js';
+import { getConnectors } from '../connectors/index.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
@@ -277,10 +277,11 @@ async function callGroq(systemPrompt, userPrompt) {
  * @param {Object}              io        - Socket.io server instance
  * @returns {Promise<Object>} Tier 1 result object
  */
-async function tier1Retry(error, step, run, io) {
+async function tier1Retry(error, step, run, io, userCredentials) {
   const runId = run._id.toString();
   const startTime = Date.now();
-  const connector = connectors[step.connector];
+  const userConnectors = getConnectors(userCredentials);
+  const connector = userConnectors[step.connector];
 
   if (!connector) {
     return { tier: 1, resolved: false, retried: false, diagnosis: null, suggestion: null };
@@ -414,7 +415,7 @@ async function tier1Retry(error, step, run, io) {
  * @param {Object}              io       - Socket.io server instance
  * @returns {Promise<Object>} Tier 2 result object
  */
-async function tier2Diagnose(error, step, run, io) {
+async function tier2Diagnose(error, step, run, io, userCredentials) {
   const runId = run._id.toString();
   const startTime = Date.now();
 
@@ -475,7 +476,8 @@ async function tier2Diagnose(error, step, run, io) {
     fixAttempted = true;
     console.log(`🔧 IFR Tier 2: Attempting auto-fix for ${step.id} with corrected params...`);
 
-    const connector = connectors[step.connector];
+    const userConnectors = getConnectors(userCredentials);
+    const connector = userConnectors[step.connector];
     if (connector) {
       try {
         const fixResult = await connector.execute(step.action, fixedParams);
@@ -692,7 +694,7 @@ async function tier3Escalate(error, step, run, io, tier1Result, tier2Result) {
  *   finalError: string|null
  * }>}
  */
-export async function handleFailure(error, step, run, io) {
+export async function handleFailure(error, step, run, io, userCredentials) {
   const errorCategory = classifyError(error);
   let tier1Result = null;
   let tier2Result = null;
@@ -700,7 +702,7 @@ export async function handleFailure(error, step, run, io) {
   // ── Tier 1: Transient retry ──────────────────────────────────────────────
   if (errorCategory === 'transient') {
     try {
-      tier1Result = await tier1Retry(error, step, run, io);
+      tier1Result = await tier1Retry(error, step, run, io, userCredentials);
       if (tier1Result.resolved) {
         return tier1Result;
       }
@@ -720,7 +722,7 @@ export async function handleFailure(error, step, run, io) {
   const currentError = tier1Result?.lastError || error;
 
   try {
-    tier2Result = await tier2Diagnose(currentError, step, run, io);
+    tier2Result = await tier2Diagnose(currentError, step, run, io, userCredentials);
     if (tier2Result.resolved) {
       return tier2Result;
     }

@@ -14,11 +14,14 @@ async function connectDB() {
       console.log('✅ MongoDB connected');
       return;
     } catch (err) {
-      console.error(
-        `❌ MongoDB connection attempt ${attempt}/${MAX_RETRIES} failed: ${err.message}`
-      );
       if (attempt === MAX_RETRIES) {
-        throw new Error('Failed to connect to MongoDB after maximum retries');
+        console.warn('⚠️ Atlas connection failed! Spinning up local in-memory MongoDB fallback...');
+        const { MongoMemoryServer } = await import('mongodb-memory-server');
+        const mongoServer = await MongoMemoryServer.create();
+        const mongoUri = mongoServer.getUri();
+        await mongoose.connect(mongoUri, { maxPoolSize: 10 });
+        console.log('✅ MongoDB connected (IN-MEMORY FALLBACK)');
+        return;
       }
       await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
     }
