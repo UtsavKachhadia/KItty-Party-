@@ -12,6 +12,7 @@ import {
   emitWorkflowCompleted,
   emitWorkflowFailed,
 } from './socketService.js';
+import { logCredentialAccess } from './auditLogger.js';
 
 const APPROVAL_POLL_INTERVAL_MS = 500;
 const APPROVAL_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
@@ -148,6 +149,23 @@ export async function runDAG(run, io, user) {
       const startTime = Date.now();
       const result = await connector.execute(step.action, step.params, user);
       const durationMs = Date.now() - startTime;
+
+      // ── Credential audit log — track credential reads during DAG execution ──
+      const connectorToService = { github: 'github', slack: 'slack', jira: 'jira' };
+      const auditService = connectorToService[step.connector];
+      if (auditService) {
+        await logCredentialAccess({
+          userId:   run.userId.toString(),
+          service:  auditService,
+          action:   'read',
+          ip:       'system',    // internal call — no HTTP request IP available
+          metadata: {
+            context: 'dagRunner',
+            runId:   run._id.toString(),
+            stepId:  stepId
+          }
+        });
+      }
 
       // ── Audit log ──
       await AuditLog.create({

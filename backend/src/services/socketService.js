@@ -62,3 +62,14 @@ export function emitWorkflowFailed(io, runId, error) {
     timestamp: new Date().toISOString(),
   });
 }
+
+/**
+ * Emits an event to a specific user's room.
+ * Expectations: User joins room `user:<userId>` on connection.
+ */
+export function emitToUser(io, userId, event, data) {
+  io.to(`user:${userId}`).emit(event, {
+    ...data,
+    timestamp: new Date().toISOString(),
+  });
+}

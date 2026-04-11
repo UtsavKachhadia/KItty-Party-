@@ -5,6 +5,10 @@ import axios from 'axios';
 import { getConnectorHealth } from '../connectors/index.js';
 import { getUserTokens, saveUserTokens } from '../services/credentialService.js';
 import requireAuth from '../middleware/auth.js';
+import { logCredentialAccess, extractIP } from '../services/auditLogger.js';
+
+// Ownership note: All credential/connector operations act on req.user.userId only.
+// No document-level ownership check needed — auth middleware is sufficient.
 
 const router = Router();
 
@@ -32,6 +36,21 @@ router.get('/health', async (req, res, next) => {
       health.jira.domain = userTokens.jiraDomain;
     }
 
+    // Audit: log a read event for each service whose tokens were fetched
+    const services = ['github', 'slack', 'jira'];
+    for (const svc of services) {
+      if (userTokens[svc] || (svc === 'jira' && userTokens.jira?.key)) {
+        await logCredentialAccess({
+          userId:    req.user.userId,
+          service:   svc,
+          action:    'read',
+          ip:        extractIP(req),
+          userAgent: req.headers['user-agent'],
+          metadata:  { context: 'connector-health-check' }
+        });
+      }
+    }
+
     return res.json(health);
   } catch (err) {
     next(err);
@@ -51,6 +70,23 @@ router.post('/save', async (req, res, next) => {
       jiraKey: jira?.apiKey,
       jiraDomain: jira?.domain,
     });
+
+    // Audit: log write for each service that was saved
+    const savedServices = [];
+    if (github?.token) savedServices.push('github');
+    if (slack?.token)  savedServices.push('slack');
+    if (jira?.apiKey)  savedServices.push('jira');
+    for (const svc of savedServices) {
+      await logCredentialAccess({
+        userId:    req.user.userId,
+        service:   svc,
+        action:    'write',
+        ip:        extractIP(req),
+        userAgent: req.headers['user-agent'],
+        metadata:  { context: 'connector-save' }
+      });
+    }
+
     return res.json({ success: true, message: 'Settings saved.' });
   } catch (err) {
     next(err);
