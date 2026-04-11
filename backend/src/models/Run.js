@@ -25,11 +25,27 @@ const runStepSchema = new mongoose.Schema(
 );
 
 const runSchema = new mongoose.Schema({
-  userId: {
+  initiatorUser: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true,
     index: true,
+  },
+  targetUser: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+    index: true,
+  },
+  executionType: {
+    type: String,
+    enum: ['SELF', 'THIRD_PARTY'],
+    default: 'SELF',
+  },
+  requestRef: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'WorkflowRequest',
+    default: null,
   },
   workflowId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -46,6 +62,14 @@ const runSchema = new mongoose.Schema({
   userInput: { type: String, default: '' },
   startedAt: { type: Date, default: null },
   endedAt: { type: Date, default: null },
+});
+
+runSchema.pre('validate', function(next) {
+  if (this.executionType === 'THIRD_PARTY' && !this.targetUser) {
+    next(new Error('Target user required'));
+  } else {
+    next();
+  }
 });
 
 const Run = mongoose.model('Run', runSchema);

@@ -107,3 +107,28 @@ export async function diagnoseError(error, stepContext) {
     };
   }
 }
+export async function callLLM(systemPrompt, userPrompt, maxTokens = 1000) {
+  const response = await axios.post(
+    GROQ_URL,
+    {
+      model: MODEL,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
+      ],
+      temperature: 0.1,
+      max_tokens: maxTokens,
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${env.GROQ_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      timeout: 15000,
+    }
+  );
+
+  let content = response.data.choices?.[0]?.message?.content;
+  if (!content) throw new Error("Empty response from Groq");
+  return content.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim();
+}
