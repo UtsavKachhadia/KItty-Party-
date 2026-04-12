@@ -257,7 +257,34 @@ router.post('/run', requireAuth, async (req, res, next) => {
           executionContext: { type: 'THIRD_PARTY', targetUsername: executionContext.targetUsername },
         });
       }
+if (res.locals.wasInvited) {
+        await res.locals.invitePromise; // ensure email sends
+        return res.status(202).json({
+          runId: run._id,
+          dag: scoredDAG,
+          status: 'USER_INVITED',
+          message: `Request created. An invite has been emailed to ${res.locals.inviteEmail}`,
+          executionContext: { type: 'THIRD_PARTY', targetUsername: executionContext.targetUsername },
+        });
+      }
 
++     // Send email notification to already-registered targeted users
++     if (targetUserDoc && targetUserDoc.email) {
++       sendInviteEmail(
++         targetUserDoc.email,
++         req.user.username || req.user.email,
++         executionContext.targetUsername
++       ).catch(err => console.error("Failed to notify registered user:", err.message));
++     }
+
+      return res.status(202).json({
+        runId: run._id,
+        dag: scoredDAG,
+        status: 'awaiting_approval',
+-       message: 'Workflow request sent to target user.',
++       message: 'Workflow request sent and user notified via email.',
+        executionContext: { type: 'THIRD_PARTY', targetUsername: executionContext.targetUsername },
+      });
       return res.status(202).json({
         runId: run._id,
         dag: scoredDAG,
