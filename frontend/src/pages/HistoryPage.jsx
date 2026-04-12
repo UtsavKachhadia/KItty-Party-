@@ -26,6 +26,23 @@ export default function HistoryPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  const downloadFile = async (url, filename) => {
+    try {
+      const response = await api.get(url, { responseType: 'blob' });
+      const blobURL = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = blobURL;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(blobURL);
+    } catch (err) {
+      console.error('Failed to download file:', err);
+      alert('Failed to download file.');
+    }
+  };
+
   const statusDot = {
     completed: 'bg-success',
     failed: 'bg-error',
@@ -35,15 +52,28 @@ export default function HistoryPage() {
 
   return (
     <div className="flex h-full overflow-hidden" id="history-page">
-      {/* Run list (left) */}
       <div className="w-[320px] border-r border-[0.5px] border-outline-variant/20 flex flex-col overflow-hidden flex-shrink-0">
-        <div className="px-4 py-3 border-b border-[0.5px] border-outline-variant/20 flex-shrink-0">
-          <h1 className="text-[16px] font-bold text-on-surface">
-            Execution Logs
-          </h1>
-          <p className="text-[11px] text-secondary mt-0.5">
-            {runs.length} workflow runs
-          </p>
+        <div className="px-4 py-3 border-b border-[0.5px] border-outline-variant/20 flex-shrink-0 flex justify-between items-center bg-surface">
+          <div>
+            <h1 className="text-[16px] font-bold text-on-surface">Execution Logs</h1>
+            <p className="text-[11px] text-secondary mt-0.5">{runs.length} workflow runs</p>
+          </div>
+          <div className="flex gap-1">
+            <button 
+              onClick={() => downloadFile('/export/history?format=csv', 'history.csv')}
+              title="Export All as CSV" 
+              className="text-secondary hover:text-primary transition-colors p-1"
+            >
+              <span className="material-symbols-outlined text-[18px]">table_chart</span>
+            </button>
+            <button 
+              onClick={() => downloadFile('/export/history?format=md', 'history.md')}
+              title="Export All as Markdown"
+              className="text-secondary hover:text-primary transition-colors p-1"
+            >
+              <span className="material-symbols-outlined text-[18px]">description</span>
+            </button>
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto">
@@ -105,12 +135,31 @@ export default function HistoryPage() {
 
       {/* Audit log (right) */}
       <div className="flex-1 overflow-hidden bg-surface-container-low">
-        <div className="px-4 py-3 border-b border-[0.5px] border-outline-variant/20 flex-shrink-0">
-          <h2 className="text-[13px] font-bold text-on-surface">Audit Trail</h2>
+        <div className="px-4 py-3 border-b border-[0.5px] border-outline-variant/20 flex-shrink-0 flex justify-between items-center bg-surface">
+          <div className="flex flex-col overflow-hidden">
+            <h2 className="text-[13px] font-bold text-on-surface">Audit Trail</h2>
+            {selectedRunId && (
+              <p className="text-[11px] text-secondary font-mono mt-0.5 truncate">
+                {selectedRunId}
+              </p>
+            )}
+          </div>
           {selectedRunId && (
-            <p className="text-[11px] text-secondary font-mono mt-0.5 truncate">
-              {selectedRunId}
-            </p>
+            <div className="flex gap-2 flex-shrink-0 items-center">
+              <span className="text-[10px] uppercase text-secondary font-bold mr-1">Export</span>
+              <button 
+                onClick={() => downloadFile(`/export/execution/${selectedRunId}?format=csv`, `execution-${selectedRunId}.csv`)}
+                className="px-2.5 py-1 text-[11px] font-bold rounded border border-outline-variant text-secondary hover:text-on-surface hover:bg-surface-container-highest transition-colors"
+              >
+                CSV
+              </button>
+              <button 
+                onClick={() => downloadFile(`/export/execution/${selectedRunId}?format=md`, `execution-${selectedRunId}.md`)}
+                className="px-2.5 py-1 text-[11px] font-bold rounded border border-outline-variant text-secondary hover:text-on-surface hover:bg-surface-container-highest transition-colors"
+              >
+                MD
+              </button>
+            </div>
           )}
         </div>
         <div className="h-[calc(100%-52px)] overflow-y-auto">

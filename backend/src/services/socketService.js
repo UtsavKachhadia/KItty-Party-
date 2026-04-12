@@ -63,13 +63,49 @@ export function emitWorkflowFailed(io, runId, error) {
   });
 }
 
+// ═══════════════════════════════════════════════════════
+// User-scoped emitters — for delegation request notifications
+// ═══════════════════════════════════════════════════════
+
 /**
- * Emits an event to a specific user's room.
- * Expectations: User joins room `user:<userId>` on connection.
+ * Strips any keys that look like credentials from a socket payload.
+ * Defensive measure — credentials should never reach this function,
+ * but this is a last-resort safety net.
+ */
+function stripCredentials(data) {
+  if (!data || typeof data !== 'object') return data;
+  const BLOCKED_KEYS = ['token', 'password', 'secret', 'encryptedToken', 'apiKey', 'credentials'];
+  const clean = { ...data };
+  for (const key of BLOCKED_KEYS) {
+    if (key in clean) {
+      delete clean[key];
+      console.warn(`[socketService] Stripped sensitive key '${key}' from socket payload`);
+    }
+  }
+  return clean;
+}
+
+/**
+ * Emit to a specific user's personal room.
+ * Use for request notifications, approval results, rejections.
  */
 export function emitToUser(io, userId, event, data) {
+  if (!io) return;
+  const safeData = stripCredentials(data);
   io.to(`user:${userId}`).emit(event, {
-    ...data,
-    timestamp: new Date().toISOString(),
+    ...safeData,
+    timestamp: new Date().toISOString()
   });
+}
+
+export function emitRequestReceived(io, targetUserId, payload) {
+  emitToUser(io, targetUserId, 'requestReceived', payload);
+}
+
+export function emitRequestApproved(io, requestingUserId, payload) {
+  emitToUser(io, requestingUserId, 'requestApproved', payload);
+}
+
+export function emitRequestRejected(io, requestingUserId, payload) {
+  emitToUser(io, requestingUserId, 'requestRejected', payload);
 }

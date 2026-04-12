@@ -11,7 +11,7 @@ const CredentialAuditLogSchema = new mongoose.Schema({
   },
   service: {
     type:     String,
-    enum:     ['github', 'slack', 'jira'],
+    enum:     ['github', 'slack', 'jira', 'google'],
     required: true
   },
   action: {
@@ -40,7 +40,6 @@ const CredentialAuditLogSchema = new mongoose.Schema({
   }
 }, {
   // Prevent accidental updates to audit records
-  // (enforced at application layer — MongoDB has no built-in append-only)
   strict: true
 });
 
@@ -51,7 +50,6 @@ CredentialAuditLogSchema.index({ action: 1, timestamp: -1 });
 CredentialAuditLogSchema.index({ userId: 1, timestamp: -1 });
 
 // TTL index — auto-delete audit logs older than 90 days to control Atlas storage
-// Remove this if compliance requires longer retention
 CredentialAuditLogSchema.index(
   { timestamp: 1 },
   { expireAfterSeconds: 90 * 24 * 60 * 60 }
