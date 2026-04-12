@@ -7,13 +7,35 @@ const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const MODEL = 'llama-3.3-70b-versatile';
 
 /**
+ * Helper to make a POST request with exponential backoff for 429 errors.
+ */
+async function axiosPostWithRetry(url, data, config, maxRetries = 3) {
+  let attempt = 0;
+  while (attempt < maxRetries) {
+    try {
+      return await axios.post(url, data, config);
+    } catch (err) {
+      if (err.response?.status === 429 && attempt < maxRetries - 1) {
+        attempt++;
+        // Exponential backoff: 2s, 4s, etc.
+        const delayMs = Math.pow(2, attempt) * 1000; 
+        console.warn(`[LLM Rate Limit] 429 from Groq. Retrying attempt ${attempt}/${maxRetries-1} in ${delayMs/1000}s...`);
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+        continue;
+      }
+      throw err;
+    }
+  }
+}
+
+/**
  * Calls Groq LLM with a planning prompt and returns a parsed DAG object.
  */
 export async function planWorkflow(userInput) {
   try {
     const { systemPrompt, userPrompt } = buildPlanningPrompt(userInput);
 
-    const response = await axios.post(
+    const response = await axiosPostWithRetry(
       GROQ_URL,
       {
         model: MODEL,
@@ -54,7 +76,7 @@ export async function planWorkflow(userInput) {
     return dag;
   } catch (err) {
     if (err.response?.status === 429) {
-      const rateLimitErr = new Error('Groq rate limit exceeded — please wait a few seconds before retrying.');
+      const rateLimitErr = new Error('Groq rate limit exceeded after multiple retries.');
       rateLimitErr.status = 429;
       throw rateLimitErr;
     }
@@ -70,7 +92,7 @@ export async function diagnoseError(error, stepContext) {
     const { buildDiagnosisPrompt } = await import('../utils/promptBuilder.js');
     const { systemPrompt, userPrompt } = buildDiagnosisPrompt(error, stepContext);
 
-    const response = await axios.post(
+    const response = await axiosPostWithRetry(
       GROQ_URL,
       {
         model: MODEL,
@@ -108,7 +130,7 @@ export async function diagnoseError(error, stepContext) {
   }
 }
 export async function callLLM(systemPrompt, userPrompt, maxTokens = 1000) {
-  const response = await axios.post(
+  const response = await axiosPostWithRetry(
     GROQ_URL,
     {
       model: MODEL,

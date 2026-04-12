@@ -44,7 +44,12 @@ export async function saveUserTokens(userId, { github, slack, jiraKey, jiraDomai
  * Retrieves and decrypts the tokens for a given user.
  */
 export async function getUserTokens(userId) {
-  const user = await User.findById(userId);
+  // Must explicitly select token fields since they have `select: false` in the schema
+  const user = await User.findById(userId).select(
+    '+integrations.github.accessToken +integrations.github.encryptedToken ' +
+    '+integrations.slack.accessToken +integrations.slack.encryptedToken +integrations.slack.botToken ' +
+    '+integrations.jira.apiToken'
+  );
   if (!user || !user.integrations) {
     return { github: null, slack: null, jira: { key: null, domain: null } };
   }

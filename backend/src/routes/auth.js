@@ -66,25 +66,31 @@ router.post('/register', async (req, res, next) => {
     if (email) existingChecks.push({ email: email.toLowerCase() });
 
     const existing = await User.findOne({ $or: existingChecks });
+    
+    let user;
     if (existing) {
       const field = (email && existing.email === email.toLowerCase()) ? 'email' : 'username';
-      return res.status(409).json({
-        success: false,
-        message: `A user with this ${field} already exists.`,
-      });
+      if (existing.isPlaceholder && field === 'email') {
+        // Core Fix: Claim Placeholder Account!
+        const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+        existing.username = username;
+        existing.passwordHash = passwordHash;
+        existing.isPlaceholder = false;
+        await existing.save();
+        user = existing;
+      } else {
+        return res.status(409).json({
+          success: false,
+          message: `A user with this ${field} already exists.`,
+        });
+      }
+    } else {
+      // ── Hash password & Create user ──
+      const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+      const userData = { username, passwordHash };
+      if (email) userData.email = email.toLowerCase();
+      user = await User.create(userData);
     }
-
-    // ── Hash password ──
-    const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
-
-    // ── Create user ──
-    const userData = {
-      username,
-      passwordHash,
-    };
-    if (email) userData.email = email.toLowerCase();
-
-    const user = await User.create(userData);
 
     // ── Save Tokens Securely (if provided) ──
     await saveUserTokens(user._id, {

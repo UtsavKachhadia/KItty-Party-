@@ -5,7 +5,7 @@ export async function exportToCSV(executionId) {
   const execution = await Run.findById(executionId);
   if (!execution) throw new Error('Execution not found');
 
-  const steps = Object.values(execution.dag || {});
+  const steps = execution.steps || execution.dag?.steps || [];
   
   const records = steps.map(step => ({
     stepName: step.id || step.action,
@@ -37,7 +37,7 @@ export async function exportToMarkdown(executionId) {
   md += `- **Date**: ${date}\n\n`;
   md += `## Steps\n\n`;
 
-  const steps = Object.values(execution.dag || {});
+  const steps = execution.steps || execution.dag?.steps || [];
   let successCount = 0;
   let failCount = 0;
 
@@ -71,7 +71,7 @@ export async function exportHistory(userId, format, limit = 10) {
   if (format === 'csv') {
     let allRecords = [];
     executions.forEach(execution => {
-      const steps = Object.values(execution.dag || {});
+      const steps = execution.steps || execution.dag?.steps || [];
       steps.forEach(step => {
         allRecords.push({
           executionId: execution._id.toString(),
@@ -94,7 +94,7 @@ export async function exportHistory(userId, format, limit = 10) {
     executions.forEach(exe => {
       md += `## Execution: ${exe._id} (${exe.status})\n`;
       md += `- Date: ${new Date(exe.createdAt).toISOString()}\n`;
-      const steps = Object.values(exe.dag || {});
+      const steps = exe.steps || exe.dag?.steps || [];
       md += `- Steps: ${steps.length}\n\n`;
     });
     return md;

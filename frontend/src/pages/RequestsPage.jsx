@@ -97,13 +97,19 @@ export default function RequestsPage() {
                     <p className="text-sm text-secondary">{req.requestMessage || 'Workflow execution request'}</p>
                     <p className="text-xs text-secondary mt-1">{new Date(req.createdAt).toLocaleString()}</p>
                   </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => handleAction(req._id, 'approve')} className="px-4 py-2 bg-primary/20 text-primary hover:bg-primary/40 rounded font-bold text-sm transition">
-                      Approve
-                    </button>
-                    <button onClick={() => handleAction(req._id, 'reject')} className="px-4 py-2 bg-error/20 text-error hover:bg-error/40 rounded font-bold text-sm transition">
-                      Reject
-                    </button>
+                  <div className="flex gap-2 items-center">
+                    {req.status === 'PENDING' ? (
+                      <>
+                        <button onClick={() => handleAction(req._id, 'approve')} className="px-4 py-2 bg-primary/20 text-primary hover:bg-primary/40 rounded font-bold text-sm transition">
+                          Approve
+                        </button>
+                        <button onClick={() => handleAction(req._id, 'reject')} className="px-4 py-2 bg-error/20 text-error hover:bg-error/40 rounded font-bold text-sm transition">
+                          Reject
+                        </button>
+                      </>
+                    ) : (
+                      getStatusBadge(req.status)
+                    )}
                   </div>
                 </div>
               ))}

@@ -26,6 +26,8 @@ const env = Object.freeze({
   UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN || '',
   GROQ_API_KEY: process.env.GROQ_API_KEY,
   JWT_SECRET: process.env.JWT_SECRET || 'secret',
+  SMTP_USER: process.env.SMTP_USER || null,
+  SMTP_PASS: process.env.SMTP_PASS || null,
   CREDENTIAL_ENCRYPTION_KEY: process.env.CREDENTIAL_ENCRYPTION_KEY || '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
   APP_API_KEY: process.env.APP_API_KEY || '',
   NODE_ENV: process.env.NODE_ENV || 'development',

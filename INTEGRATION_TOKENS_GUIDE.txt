@@ -1,0 +1,64 @@
+# How to Get GitHub, Jira, and Slack Tokens
+
+This guide explains how to obtain the required tokens for integrating your accounts with the Agentic MCP Gateway. Follow the steps for each service below.
+
+---
+
+## 1. GitHub Personal Access Token (PAT)
+
+1. Go to https://github.com/settings/tokens
+2. Click **"Generate new token"** (classic) or **"Fine-grained token"** (recommended).
+3. **Name your token** (e.g., "MCP Gateway").
+4. **Expiration:** Choose a suitable expiration (e.g., 90 days or No expiration).
+5. **Select Scopes:**
+   - For repo management: `repo` (Full control of private repositories)
+   - For workflow: `workflow`
+   - For notifications: `notifications`
+   - For user info: `read:user`
+6. Click **"Generate token"** at the bottom.
+7. **Copy the token** and save it securely. You will not be able to see it again!
+8. Paste this token into the MCP Gateway when connecting your GitHub account.
+
+---
+
+## 2. Jira API Token
+
+1. Go to https://id.atlassian.com/manage-profile/security/api-tokens
+2. Click **"Create API token"**.
+3. **Label** your token (e.g., "MCP Gateway").
+4. Click **"Create"**.
+5. **Copy the token** shown and save it securely.
+6. In MCP Gateway, you will also need your Jira **domain** (e.g., `yourcompany.atlassian.net`).
+7. Paste the API token and domain into the Jira integration fields in MCP Gateway.
+
+---
+
+## 3. Slack OAuth Token
+
+### For Workspace Admins (recommended):
+1. Go to https://api.slack.com/apps and click **"Create New App"**.
+2. Choose **From scratch** and give your app a name (e.g., "MCP Gateway") and select your workspace.
+3. In the left sidebar, go to **OAuth & Permissions**.
+4. Under **Scopes**, add the following:
+   - `chat:write` (Send messages as app)
+   - `channels:read` (View channels)
+   - `groups:read` (View private channels)
+   - `users:read` (View people in workspace)
+   - `incoming-webhook` (optional, for notifications)
+5. Click **"Install App to Workspace"** and authorize.
+6. **Copy the Bot User OAuth Token** (starts with `xoxb-`).
+7. Paste this token into the Slack integration field in MCP Gateway.
+
+### For Personal Use (if allowed):
+- You may use a legacy token from https://api.slack.com/custom-integrations/legacy-tokens (if your workspace allows it), but this is not recommended for security reasons.
+
+---
+
+## Notes
+- **Never share your tokens** publicly or commit them to source control.
+- If you lose a token, **revoke and regenerate** it from the respective service.
+- For more details, see the official documentation for each service.
+
+---
+
+If you have issues, contact your workspace admin or refer to the official docs for GitHub, Jira, or Slack.

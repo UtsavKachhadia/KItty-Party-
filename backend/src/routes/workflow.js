@@ -7,6 +7,61 @@ import { scoreDAG } from '../services/confidenceScorer.js';
 import { runDAG } from '../services/dagRunner.js';
 import { getConnectorHealth } from '../connectors/index.js';
 import requireAuth from '../middleware/auth.js';
+import { Octokit } from '@octokit/rest';
+import crypto from 'crypto';
+import WorkflowRequest from '../models/WorkflowRequest.js';
+import { sendInviteEmail } from '../services/emailService.js';
+import { getUserTokens } from '../services/credentialService.js';
+
+async function attemptGitHubInvite(searchStr, initiatorUserId, initiatorUsername, res) {
+  const isEmail = /.+\@.+\..+/.test(searchStr);
+  let destEmail = isEmail ? searchStr : null;
+
+  if (!isEmail) {
+    try {
+      const tokens = await getUserTokens(initiatorUserId);
+      const ghToken = tokens?.github?.accessToken || tokens?.github?.encryptedToken;
+      if (ghToken) {
+        const octokit = new Octokit({ auth: ghToken });
+        const { data } = await octokit.users.getByUsername({ username: searchStr });
+        if (data && data.email) {
+          destEmail = data.email;
+        } else if (data) {
+          return res.status(404).json({
+            error: `User matches GitHub profile '@${searchStr}', but their email is private. Cannot send invite.`,
+            code: 'USER_PRIVATE_EMAIL'
+          });
+        }
+      }
+    } catch (err) {
+      console.warn(`[GitHub Invite] Failed to fetch user ${searchStr}: ${err.message}`);
+    }
+  }
+
+  if (destEmail) {
+    const invitePromise = sendInviteEmail(destEmail, initiatorUsername, searchStr);
+    
+    // Create a local Placeholder user safely so the DB schema succeeds
+    const placeholder = await User.create({
+      username: `inv_${crypto.randomBytes(4).toString('hex')}_${searchStr}`.toLowerCase(),
+      email: destEmail.toLowerCase(),
+      passwordHash: 'placeholder_auth_bypass',
+      isPlaceholder: true
+    });
+
+    res.locals.wasInvited = true;
+    res.locals.inviteEmail = destEmail;
+    res.locals.invitePromise = invitePromise;
+
+    return placeholder;
+  }
+
+  res.status(404).json({
+    error: `User '${searchStr}' not found locally or on GitHub.`,
+    code: 'USER_NOT_FOUND',
+  });
+  return null;
+}
 
 const router = Router();
 
@@ -57,14 +112,19 @@ router.post('/run', requireAuth, async (req, res, next) => {
             code: 'INVALID_CONTEXT',
           });
         }
+        const strippedSearch = providedContext.targetUsername.replace(/^@/, '').trim();
+        const searchRegex = new RegExp(`^${strippedSearch}$`, 'i');
         const targetUser = await User.findOne({
-          username: providedContext.targetUsername.toLowerCase(),
+          $or: [
+            { username: searchRegex },
+            { email: searchRegex },
+            // Even if these don't exist in the DB yet, it future-proofs the query
+            { 'integrations.github.username': searchRegex },
+            { 'integrations.slack.username': searchRegex }
+          ]
         });
         if (!targetUser) {
-          return res.status(404).json({
-            error: `User @${providedContext.targetUsername} not found in system`,
-            code: 'USER_NOT_FOUND',
-          });
+          return await attemptGitHubInvite(strippedSearch, req.user.userId, req.user.username || req.user.email, res);
         }
         executionContext = {
           type: 'THIRD_PARTY',
@@ -93,14 +153,18 @@ router.post('/run', requireAuth, async (req, res, next) => {
       }
 
       if (intent.executionType === 'THIRD_PARTY') {
+        const strippedSearch = intent.targetUsername.replace(/^@/, '').trim();
+        const searchRegex = new RegExp(`^${strippedSearch}$`, 'i');
         const targetUser = await User.findOne({
-          username: intent.targetUsername,
+          $or: [
+            { username: searchRegex },
+            { email: searchRegex },
+            { 'integrations.github.username': searchRegex },
+            { 'integrations.slack.username': searchRegex }
+          ]
         });
         if (!targetUser) {
-          return res.status(404).json({
-            error: `User @${intent.targetUsername} not found in system`,
-            code: 'USER_NOT_FOUND',
-          });
+          return await attemptGitHubInvite(strippedSearch, req.user.userId, req.user.username || req.user.email, res);
         }
         executionContext = {
           type: 'THIRD_PARTY',
@@ -120,28 +184,33 @@ router.post('/run', requireAuth, async (req, res, next) => {
 
     // ── Resolve credentials for the target user ──
     const credTargetUserId = executionContext.targetUserId;
-    const { getUserTokens } = await import('../services/credentialService.js');
     const userTokens = await getUserTokens(credTargetUserId);
     const targetUserDoc = await User.findById(credTargetUserId).lean();
     const userContext = { email: targetUserDoc?.email || req.user.email, tokens: userTokens };
+    
+    const isPlaceholder = targetUserDoc?.isPlaceholder;
 
     // ── Plan DAG via LLM ──
     const rawDAG = await planWorkflow(userInput);
 
     // ── Pre-Execution Validation ──
     const availableConnectors = getConnectorHealth(userContext);
-    const missingConnectors = new Set();
-    for (const step of rawDAG.steps) {
-      if (!availableConnectors[step.connector]?.configured) {
-        missingConnectors.add(step.connector);
+    
+    // Bypass connector checks if this is just generating a request for a placeholder 
+    if (!isPlaceholder) {
+      const missingConnectors = new Set();
+      for (const step of rawDAG.steps) {
+        if (!availableConnectors[step.connector]?.configured) {
+          missingConnectors.add(step.connector);
+        }
       }
-    }
-    if (missingConnectors.size > 0) {
-      const missing = Array.from(missingConnectors).join(', ');
-      return res.status(400).json({
-        error: `${missing} token not configured for this user`,
-        code: 'MISSING_CREDENTIALS',
-      });
+      if (missingConnectors.size > 0) {
+        const missing = Array.from(missingConnectors).join(', ');
+        return res.status(400).json({
+          error: `${missing} token not configured for this user`,
+          code: 'MISSING_CREDENTIALS',
+        });
+      }
     }
 
     // ── Score confidence ──
@@ -156,17 +225,49 @@ router.post('/run', requireAuth, async (req, res, next) => {
       }
     }
 
-    // ── Create Run document with executionContext ──
+    // ── Create Run document with multi-user execution fields ──
     const run = await Run.create({
-      userId: req.user.userId,
+      initiatorUser: executionContext.initiatingUserId,
+      targetUser: executionContext.targetUserId,
+      executionType: executionContext.type,
+      requestRef: executionContext.requestRef || null,
       dag: scoredDAG,
-      status: 'pending',
+      status: executionContext.type === 'THIRD_PARTY' ? 'awaiting_approval' : 'pending',
       steps: scoredDAG.steps,
       userInput,
-      executionContext,
     });
 
-    // ── Start DAG execution — non-blocking ──
+    if (executionContext.type === 'THIRD_PARTY') {
+      // Create WorkflowRequest document for tracking
+      await WorkflowRequest.create({
+        requestingUser: executionContext.initiatingUserId,
+        targetUser: executionContext.targetUserId,
+        workflowPayload: { dag: scoredDAG, runId: run._id },
+        requestMessage: userInput,
+        status: 'PENDING'
+      });
+
+      if (res.locals.wasInvited) {
+        await res.locals.invitePromise; // ensure email sends
+        return res.status(202).json({
+          runId: run._id,
+          dag: scoredDAG,
+          status: 'USER_INVITED',
+          message: `Request created. An invite has been emailed to ${res.locals.inviteEmail}`,
+          executionContext: { type: 'THIRD_PARTY', targetUsername: executionContext.targetUsername },
+        });
+      }
+
+      return res.status(202).json({
+        runId: run._id,
+        dag: scoredDAG,
+        status: 'awaiting_approval',
+        message: 'Workflow request sent to target user.',
+        executionContext: { type: 'THIRD_PARTY', targetUsername: executionContext.targetUsername },
+      });
+    }
+
+    // ── Start DAG execution — non-blocking (SELF only) ──
     const io = req.app.get('io');
     runDAG(run, io, userContext).catch((err) => {
       console.error(`Background DAG run error: ${err.message}`);
@@ -193,7 +294,7 @@ router.post('/run', requireAuth, async (req, res, next) => {
  */
 router.get('/history', requireAuth, async (req, res, next) => {
   try {
-    const runs = await Run.find({ userId: req.user.userId })
+    const runs = await Run.findByUser(req.user.userId)
       .sort({ startedAt: -1 })
       .limit(20)
       .lean();
@@ -205,7 +306,9 @@ router.get('/history', requireAuth, async (req, res, next) => {
       stepsTotal: run.steps.length,
       stepsCompleted: run.steps.filter((s) => s.status === 'completed').length,
       stepsFailed: run.steps.filter((s) => s.status === 'failed').length,
-      executionContext: run.executionContext || { type: 'SELF' },
+      executionType: run.executionType || 'SELF',
+      initiatorUser: run.initiatorUser,
+      targetUser: run.targetUser,
       startedAt: run.startedAt,
       endedAt: run.endedAt,
     }));

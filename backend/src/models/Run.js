@@ -62,13 +62,39 @@ const runSchema = new mongoose.Schema({
   userInput: { type: String, default: '' },
   startedAt: { type: Date, default: null },
   endedAt: { type: Date, default: null },
+}, {
+  timestamps: true,
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true },
 });
 
-runSchema.pre('validate', function(next) {
+/**
+ * Virtual: returns true when the execution was triggered by the user for themselves.
+ */
+runSchema.virtual('isSelfExecution').get(function () {
+  return this.executionType === 'SELF';
+});
+
+/**
+ * Static: find all executions where a user is either the initiator or the target.
+ * @param {mongoose.Types.ObjectId|string} userId
+ * @returns {mongoose.Query}
+ */
+runSchema.statics.findByUser = function (userId) {
+  return this.find({
+    $or: [
+      { initiatorUser: userId },
+      { targetUser: userId },
+    ],
+  }).sort({ createdAt: -1 });
+};
+
+/**
+ * Pre-validate hook: ensure targetUser is provided for THIRD_PARTY executions.
+ */
+runSchema.pre('validate', function() {
   if (this.executionType === 'THIRD_PARTY' && !this.targetUser) {
-    next(new Error('Target user required'));
-  } else {
-    next();
+    throw new Error('Target user required');
   }
 });
 

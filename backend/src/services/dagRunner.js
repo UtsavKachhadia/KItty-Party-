@@ -69,11 +69,11 @@ export async function runDAG(run, io, user) {
       const step = stepMap[stepId];
       if (!step) continue;
 
-      // ── Emit step:started (include executionContext metadata, never credentials) ──
+      // ── Emit step:started (include execution metadata, never credentials) ──
       emitStepStarted(io, runId, {
         ...step,
-        executionType: run.executionContext?.type || 'SELF',
-        targetUser: run.executionContext?.targetUsername || null,
+        executionType: run.executionType || 'SELF',
+        targetUser: run.targetUser || null,
       });
       step.status = 'running';
       step.startedAt = new Date();
@@ -133,7 +133,7 @@ export async function runDAG(run, io, user) {
           { $set: { 'steps.$.status': 'failed', 'steps.$.error': errMsg, 'steps.$.endedAt': step.endedAt } }
         );
         await AuditLog.create({
-          userId: run.userId,
+          userId: run.initiatorUser,
           runId: run._id,
           stepId,
           connector: step.connector,
@@ -155,7 +155,7 @@ export async function runDAG(run, io, user) {
 
       // ── Audit log ──
       await AuditLog.create({
-        userId: run.userId,
+        userId: run.initiatorUser,
         runId: run._id,
         stepId,
         connector: step.connector,
@@ -204,7 +204,7 @@ export async function runDAG(run, io, user) {
             }
           );
           await AuditLog.create({
-            userId: run.userId,
+            userId: run.initiatorUser,
             runId: run._id,
             stepId,
             connector: step.connector,
