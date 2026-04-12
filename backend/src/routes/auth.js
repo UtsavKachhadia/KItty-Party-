@@ -42,13 +42,13 @@ router.post('/register', async (req, res, next) => {
     const { username, email, password, connectors } = req.body;
 
     // ── Validation ──
-    if (!username || !email || !password) {
+    if (!username || !password) {
       return res.status(400).json({
         success: false,
-        message: 'Username, email, and password are required.',
+        message: 'Username and password are required.',
       });
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return res.status(400).json({
         success: false,
         message: 'Please enter a valid email address.',
@@ -62,26 +62,35 @@ router.post('/register', async (req, res, next) => {
     }
 
     // ── Check existing user ──
-    const existing = await User.findOne({
-      $or: [{ email: email.toLowerCase() }, { username }],
-    });
+    const existingChecks = [{ username }];
+    if (email) existingChecks.push({ email: email.toLowerCase() });
+
+    const existing = await User.findOne({ $or: existingChecks });
+    
+    let user;
     if (existing) {
-      const field = existing.email === email.toLowerCase() ? 'email' : 'username';
-      return res.status(409).json({
-        success: false,
-        message: `A user with this ${field} already exists.`,
-      });
+      const field = (email && existing.email === email.toLowerCase()) ? 'email' : 'username';
+      if (existing.isPlaceholder && field === 'email') {
+        // Core Fix: Claim Placeholder Account!
+        const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+        existing.username = username;
+        existing.passwordHash = passwordHash;
+        existing.isPlaceholder = false;
+        await existing.save();
+        user = existing;
+      } else {
+        return res.status(409).json({
+          success: false,
+          message: `A user with this ${field} already exists.`,
+        });
+      }
+    } else {
+      // ── Hash password & Create user ──
+      const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+      const userData = { username, passwordHash };
+      if (email) userData.email = email.toLowerCase();
+      user = await User.create(userData);
     }
-
-    // ── Hash password ──
-    const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
-
-    // ── Create user ──
-    const user = await User.create({
-      username,
-      email: email.toLowerCase(),
-      passwordHash,
-    });
 
     // ── Save Tokens Securely (if provided) ──
     await saveUserTokens(user._id, {
@@ -95,9 +104,11 @@ router.post('/register', async (req, res, next) => {
     const token = generateToken(user);
 
     // ── Send welcome email (fire-and-forget, don't block response) ──
-    sendWelcomeEmail(user.email, user.username).catch((err) => {
-      console.error('Failed to send welcome email:', err.message);
-    });
+    if (user.email) {
+      sendWelcomeEmail(user.email, user.username).catch((err) => {
+        console.error('Failed to send welcome email:', err.message);
+      });
+    }
 
     return res.status(201).json({
       success: true,
@@ -115,25 +126,33 @@ router.post('/register', async (req, res, next) => {
  */
 router.post('/login', async (req, res, next) => {
   try {
-    const { email, password } = req.body;
+    const { email, username, password } = req.body;
 
-    if (!email || !password) {
+    // Identify user by username or email
+    const loginIdentifier = username || email;
+
+    if (!loginIdentifier || !password) {
       return res.status(400).json({
         success: false,
-        message: 'Email and password are required.',
+        message: 'Username/Email and password are required.',
       });
     }
 
     // ── Find user ──
-    let user = await User.findOne({ email: email.toLowerCase() });
+    let user = await User.findOne({
+      $or: [
+        { email: loginIdentifier.toLowerCase() },
+        { username: loginIdentifier }
+      ]
+    });
 
     // ── Admin auto-seed: creates admin account on first login attempt ──
     // If a legacy admin doc exists (from old schema), clean it up first
-    if (user && (email.toLowerCase() === 'admin@mcp.com') && !user.username) {
+    if (user && (loginIdentifier.toLowerCase() === 'admin@mcp.com') && !user.username) {
       await User.deleteOne({ _id: user._id });
       user = null;
     }
-    if (!user && (email.toLowerCase() === 'admin@mcp.com') && password === 'admin123') {
+    if (!user && (loginIdentifier.toLowerCase() === 'admin@mcp.com') && password === 'admin123') {
       const passwordHash = await bcrypt.hash('admin123', SALT_ROUNDS);
       user = await User.create({
         username: 'admin',

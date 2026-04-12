@@ -1,82 +1,42 @@
-import crypto from 'crypto';
-import env from '../../config/env.js';
-import Token from '../models/Token.js';
+import User from '../models/User.js';
+import { encrypt, decrypt } from '../utils/encryption.js';
 
-const ALGORITHM = 'aes-256-gcm';
-const IV_LENGTH = 16;
-const SALT_LENGTH = 64;
-const TAG_LENGTH = 16;
-const KEY_LEN = 32;
-
-/**
- * Derives a 32-byte key using PBKDF2 with the provided salt and the master
- * CREDENTIAL_ENCRYPTION_KEY from environment variables.
- */
-function getKey(salt) {
-  if (!env.CREDENTIAL_ENCRYPTION_KEY) {
-    throw new Error('Missing CREDENTIAL_ENCRYPTION_KEY in env variables');
-  }
-  return crypto.pbkdf2Sync(env.CREDENTIAL_ENCRYPTION_KEY, salt, 100000, KEY_LEN, 'sha512');
-}
-
-/**
- * Encrypts a string symmetrically.
- * Format returned: <salt:hex>:<iv:hex>:<authTag:hex>:<encrypted:hex>
- */
-export function encrypt(text) {
-  if (!text) return null;
-
-  const salt = crypto.randomBytes(SALT_LENGTH);
-  const iv = crypto.randomBytes(IV_LENGTH);
-  const key = getKey(salt);
-
-  const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
-  let encrypted = cipher.update(text, 'utf8', 'hex');
-  encrypted += cipher.final('hex');
-  const authTag = cipher.getAuthTag();
-
-  return `${salt.toString('hex')}:${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted}`;
-}
-
-/**
- * Decrypts a returned string from the above encrypt function.
- */
-export function decrypt(encData) {
-  if (!encData) return null;
-
-  const parts = encData.split(':');
-  if (parts.length !== 4) {
-    throw new Error('Invalid encrypted format');
-  }
-
-  const salt = Buffer.from(parts[0], 'hex');
-  const iv = Buffer.from(parts[1], 'hex');
-  const authTag = Buffer.from(parts[2], 'hex');
-  const encryptedText = parts[3];
-
-  const key = getKey(salt);
-  const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
-  decipher.setAuthTag(authTag);
-
-  let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
-  decrypted += decipher.final('utf8');
-  return decrypted;
-}
+// Moved encryption logic to utils/encryption.js
 
 /**
  * Saves or updates tokens for a given userId securely in the Token collection.
  */
 export async function saveUserTokens(userId, { github, slack, jiraKey, jiraDomain }) {
-  const updateData = {};
-  if (github !== undefined) updateData.githubToken = encrypt(github);
-  if (slack !== undefined) updateData.slackToken = encrypt(slack);
-  if (jiraKey !== undefined) updateData.jiraToken = encrypt(jiraKey);
-  if (jiraDomain !== undefined) updateData.jiraDomain = jiraDomain; // Not sensitive
+  const secretKey = process.env.CREDENTIAL_SECRET || process.env.CREDENTIAL_ENCRYPTION_KEY;
+  if (!secretKey) throw new Error('CREDENTIAL_SECRET missing');
 
-  return Token.findOneAndUpdate(
-    { userId },
+  const updateData = {};
+
+  if (github !== undefined) {
+    const enc = encrypt(github, secretKey);
+    updateData['integrations.github.encryptedToken'] = enc ? JSON.stringify(enc) : null;
+    updateData['integrations.github.connectedAt'] = new Date();
+  }
+
+  if (slack !== undefined) {
+    const enc = encrypt(slack, secretKey);
+    updateData['integrations.slack.encryptedToken'] = enc ? JSON.stringify(enc) : null;
+    updateData['integrations.slack.connectedAt'] = new Date();
+  }
+
+  if (jiraKey !== undefined) {
+    const enc = encrypt(jiraKey, secretKey);
+    updateData['integrations.jira.apiToken'] = enc ? JSON.stringify(enc) : null;
+    if (jiraDomain !== undefined) {
+      updateData['integrations.jira.domain'] = jiraDomain;
+    }
+    updateData['integrations.jira.connectedAt'] = new Date();
+  }
+
+  return User.findByIdAndUpdate(
+    userId,
     { $set: updateData },
-    { upsert: true, new: true, setDefaultsOnInsert: true }
+    { new: true }
   );
 }
 
@@ -84,25 +44,35 @@ export async function saveUserTokens(userId, { github, slack, jiraKey, jiraDomai
  * Retrieves and decrypts the tokens for a given user.
  */
 export async function getUserTokens(userId) {
-  const doc = await Token.findOne({ userId });
-  if (!doc) {
+  // Must explicitly select token fields since they have `select: false` in the schema
+  const user = await User.findById(userId).select(
+    '+integrations.github.accessToken +integrations.github.encryptedToken ' +
+    '+integrations.slack.accessToken +integrations.slack.encryptedToken +integrations.slack.botToken ' +
+    '+integrations.jira.apiToken'
+  );
+  if (!user || !user.integrations) {
     return { github: null, slack: null, jira: { key: null, domain: null } };
   }
 
+  const secretKey = process.env.CREDENTIAL_SECRET || process.env.CREDENTIAL_ENCRYPTION_KEY;
+
   const safeDecrypt = (val) => {
     try {
-        return val ? decrypt(val) : null;
+      if (!val) return null;
+      return decrypt(JSON.parse(val), secretKey);
     } catch {
-        return null;
+      return null;
     }
   };
 
+  const integrations = user.integrations;
+
   return {
-    github: safeDecrypt(doc.githubToken),
-    slack: safeDecrypt(doc.slackToken),
+    github: safeDecrypt(integrations.github?.encryptedToken),
+    slack: safeDecrypt(integrations.slack?.encryptedToken),
     jira: {
-      key: safeDecrypt(doc.jiraToken),
-      domain: doc.jiraDomain,
+      key: safeDecrypt(integrations.jira?.apiToken),
+      domain: integrations.jira?.domain,
     },
   };
 }

@@ -69,8 +69,12 @@ export async function runDAG(run, io, user) {
       const step = stepMap[stepId];
       if (!step) continue;
 
-      // ── Emit step:started ──
-      emitStepStarted(io, runId, step);
+      // ── Emit step:started (include execution metadata, never credentials) ──
+      emitStepStarted(io, runId, {
+        ...step,
+        executionType: run.executionType || 'SELF',
+        targetUser: run.targetUser || null,
+      });
       step.status = 'running';
       step.startedAt = new Date();
       await Run.updateOne(
@@ -129,7 +133,7 @@ export async function runDAG(run, io, user) {
           { $set: { 'steps.$.status': 'failed', 'steps.$.error': errMsg, 'steps.$.endedAt': step.endedAt } }
         );
         await AuditLog.create({
-          userId: run.userId,
+          userId: run.initiatorUser,
           runId: run._id,
           stepId,
           connector: step.connector,
@@ -151,7 +155,7 @@ export async function runDAG(run, io, user) {
 
       // ── Audit log ──
       await AuditLog.create({
-        userId: run.userId,
+        userId: run.initiatorUser,
         runId: run._id,
         stepId,
         connector: step.connector,
@@ -178,7 +182,7 @@ export async function runDAG(run, io, user) {
             },
           }
         );
-        emitStepCompleted(io, runId, stepId, result.data);
+        emitStepCompleted(io, runId, stepId, result.data);  // credentials never included in result
       } else {
         // ── IFR: handle failure ──
         const retryFn = () => connector.execute(step.action, step.params, user);
@@ -200,7 +204,7 @@ export async function runDAG(run, io, user) {
             }
           );
           await AuditLog.create({
-            userId: run.userId,
+            userId: run.initiatorUser,
             runId: run._id,
             stepId,
             connector: step.connector,

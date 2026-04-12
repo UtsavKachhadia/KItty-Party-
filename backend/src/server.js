@@ -3,6 +3,7 @@ import { Server as SocketIOServer } from 'socket.io';
 import app from './app.js';
 import connectDB from '../config/db.js';
 import env from '../config/env.js';
+import { registerCleanupJob } from './jobs/cleanupExpiredRequests.js';
 
 const server = http.createServer(app);
 
@@ -35,6 +36,9 @@ async function start() {
 ║   Env:     ${String(env.NODE_ENV).padEnd(38)}║
 ║   Socket:  Enabled                                ║
 ╚═══════════════════════════════════════════════════╝`);
+
+      // Register the hourly stale-request cleanup job (Phase 5)
+      registerCleanupJob();
     });
   } catch (err) {
     console.error('💥 Failed to start server:', err);

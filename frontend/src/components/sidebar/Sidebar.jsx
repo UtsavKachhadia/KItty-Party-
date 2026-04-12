@@ -39,6 +39,12 @@ export default function Sidebar() {
       {/* Navigation */}
       <nav className="px-1 pt-2 flex flex-col gap-0.5">
         <NavItem
+          icon="dashboard"
+          label="Dashboard"
+          active={activePage === 'dashboard'}
+          onClick={() => setActivePage('dashboard')}
+        />
+        <NavItem
           icon="account_tree"
           label="Workflow Engine"
           active={activePage === 'workflow'}
@@ -49,6 +55,18 @@ export default function Sidebar() {
           label="Execution Logs"
           active={activePage === 'history'}
           onClick={() => setActivePage('history')}
+        />
+        <NavItem
+          icon="inbox"
+          label="Requests"
+          active={activePage === 'requests'}
+          onClick={() => setActivePage('requests')}
+        />
+        <NavItem
+          icon="extension"
+          label="Integrations"
+          active={activePage === 'integrations'}
+          onClick={() => setActivePage('integrations')}
         />
       </nav>
 

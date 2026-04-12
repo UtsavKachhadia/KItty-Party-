@@ -6,6 +6,9 @@ import StatusBar from './components/shared/StatusBar';
 import WorkflowPage from './pages/WorkflowPage';
 import HistoryPage from './pages/HistoryPage';
 import SettingsPage from './pages/SettingsPage';
+import Dashboard from './pages/Dashboard';
+import RequestsPage from './pages/RequestsPage';
+import IntegrationsPage from './pages/IntegrationsPage';
 import ApprovalModal from './components/modals/ApprovalModal';
 import Chatbot from './components/shared/Chatbot';
 
@@ -25,6 +28,9 @@ export default function AppShell({ onLogout }) {
     workflow: <WorkflowPage />,
     history: <HistoryPage />,
     settings: <SettingsPage />,
+    dashboard: <Dashboard />,
+    requests: <RequestsPage />,
+    integrations: <IntegrationsPage />
   };
 
   return (

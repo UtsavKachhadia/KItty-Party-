@@ -1,9 +1,9 @@
 import NLInputBar from '../components/shared/NLInputBar';
-import DAGCanvas from '../components/dag/DAGCanvas';
+import WorkflowTimeline from '../components/workflow/WorkflowTimeline';
 import RightPanel from '../components/rightpanel/RightPanel';
 
 /**
- * Main workflow page — NLInputBar + DAGCanvas + RightPanel.
+ * Main workflow page — NLInputBar + WorkflowTimeline + RightPanel.
  */
 export default function WorkflowPage() {
   return (
@@ -16,7 +16,7 @@ export default function WorkflowPage() {
       {/* Canvas + Right Panel */}
       <div className="flex flex-1 overflow-hidden">
         <div className="flex-1 overflow-hidden">
-          <DAGCanvas />
+          <WorkflowTimeline />
         </div>
         <RightPanel />
       </div>

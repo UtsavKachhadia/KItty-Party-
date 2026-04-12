@@ -25,11 +25,27 @@ const runStepSchema = new mongoose.Schema(
 );
 
 const runSchema = new mongoose.Schema({
-  userId: {
+  initiatorUser: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true,
     index: true,
+  },
+  targetUser: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+    index: true,
+  },
+  executionType: {
+    type: String,
+    enum: ['SELF', 'THIRD_PARTY'],
+    default: 'SELF',
+  },
+  requestRef: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'WorkflowRequest',
+    default: null,
   },
   workflowId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -46,6 +62,40 @@ const runSchema = new mongoose.Schema({
   userInput: { type: String, default: '' },
   startedAt: { type: Date, default: null },
   endedAt: { type: Date, default: null },
+}, {
+  timestamps: true,
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true },
+});
+
+/**
+ * Virtual: returns true when the execution was triggered by the user for themselves.
+ */
+runSchema.virtual('isSelfExecution').get(function () {
+  return this.executionType === 'SELF';
+});
+
+/**
+ * Static: find all executions where a user is either the initiator or the target.
+ * @param {mongoose.Types.ObjectId|string} userId
+ * @returns {mongoose.Query}
+ */
+runSchema.statics.findByUser = function (userId) {
+  return this.find({
+    $or: [
+      { initiatorUser: userId },
+      { targetUser: userId },
+    ],
+  }).sort({ createdAt: -1 });
+};
+
+/**
+ * Pre-validate hook: ensure targetUser is provided for THIRD_PARTY executions.
+ */
+runSchema.pre('validate', function() {
+  if (this.executionType === 'THIRD_PARTY' && !this.targetUser) {
+    throw new Error('Target user required');
+  }
 });
 
 const Run = mongoose.model('Run', runSchema);

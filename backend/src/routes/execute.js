@@ -64,7 +64,10 @@ router.post('/workflow/replay/:runId', requireAuth, async (req, res, next) => {
     }
 
     const newRun = await Run.create({
-      userId: req.user.userId,
+      initiatorUser: req.user.userId,
+      targetUser: original.targetUser || req.user.userId,
+      executionType: original.executionType || 'SELF',
+      requestRef: original.requestRef || null,
       workflowId: original.workflowId,
       dag: original.dag,
       status: 'pending',
