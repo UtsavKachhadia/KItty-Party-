@@ -73,7 +73,7 @@ export async function sendWelcomeEmail(toEmail, username) {
             </p>
           </div>
           <div style="text-align: center;">
-            <a href="http://localhost:5173" style="display: inline-block; background: #007AFF; color: #fff; text-decoration: none; padding: 10px 24px; border-radius: 8px; font-size: 13px; font-weight: 600;">
+            <a href="https://finalhackathondeployedproject.vercel.app/" style="display: inline-block; background: #007AFF; color: #fff; text-decoration: none; padding: 10px 24px; border-radius: 8px; font-size: 13px; font-weight: 600;">
               Open Dashboard
             </a>
           </div>
