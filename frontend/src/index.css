@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=JetBrains+Mono:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -18,9 +20,11 @@ html, body, #root {
 }
 
 body {
-  font-family: 'Inter', system-ui, sans-serif;
-  font-size: 13px;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 14px;
   line-height: 1.5;
+  background: #1a1410;
+  color: #f0ece0;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -36,12 +40,12 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #414755;
+  background: #c9a84c;
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #6C757D;
+  background: #d4b76a;
 }
 
 /* ── ReactFlow overrides ── */
@@ -68,8 +72,8 @@ body {
 
 /* ── Selection color ── */
 ::selection {
-  background: rgba(0, 122, 255, 0.3);
-  color: #E5E2E1;
+  background: rgba(201, 168, 76, 0.3);
+  color: #f0ece0;
 }
 
 /* ── Login page animations ── */

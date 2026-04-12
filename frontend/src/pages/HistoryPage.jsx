@@ -51,12 +51,12 @@ export default function HistoryPage() {
   };
 
   return (
-    <div className="flex h-full overflow-hidden" id="history-page">
-      <div className="w-[320px] border-r border-[0.5px] border-outline-variant/20 flex flex-col overflow-hidden flex-shrink-0">
-        <div className="px-4 py-3 border-b border-[0.5px] border-outline-variant/20 flex-shrink-0 flex justify-between items-center bg-surface">
+    <div className="flex h-full overflow-hidden" id="history-page" style={{ background: '#f0ece0' }}>
+      <div className="w-[320px] flex flex-col overflow-hidden flex-shrink-0" style={{ background: '#f0ece0', borderRight: '1px solid #2e2820' }}>
+        <div className="px-4 py-3 flex-shrink-0 flex justify-between items-center" style={{ borderBottom: '1px solid #2e2820' }}>
           <div>
-            <h1 className="text-[16px] font-bold text-on-surface">Execution Logs</h1>
-            <p className="text-[11px] text-secondary mt-0.5">{runs.length} workflow runs</p>
+            <h1 className="text-[16px] font-bold" style={{ color: '#1a1410' }}>Execution Logs</h1>
+            <p className="text-[11px] mt-0.5" style={{ color: '#7a7060' }}>{runs.length} workflow runs</p>
           </div>
           <div className="flex gap-1">
             <button 

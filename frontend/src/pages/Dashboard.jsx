@@ -101,23 +101,23 @@ export default function Dashboard() {
   );
 
   return (
-    <div className="flex flex-col h-full bg-surface p-6 overflow-y-auto">
-      <h1 className="text-2xl font-bold text-on-surface mb-6">Dashboard</h1>
+      <div className="flex flex-col h-full p-6 overflow-y-auto" style={{ background: '#f0ece0' }}>
+      <h1 className="text-2xl font-bold mb-6" style={{ color: '#1a1410' }}>Dashboard</h1>
       
       <div className="w-full max-w-4xl space-y-6">
         
         {/* Analytics Panel */}
-        <div className="p-6 border border-outline-variant bg-surface-container rounded-xl">
-          <h2 className="text-lg font-bold text-on-surface mb-4">Analytics Overview</h2>
+        <div className="p-6 bg-surface-container rounded-xl" style={{ border: '1px solid #2e2820' }}>
+          <h2 className="text-lg font-bold mb-4" style={{ color: '#1a1410' }}>Analytics Overview</h2>
           
           {history.length === 0 ? (
-            <p className="text-secondary text-sm py-4">No data available for analytics.</p>
+            <p className="text-sm py-4" style={{ color: '#7a7060' }}>No data available for analytics.</p>
           ) : (
             <div className="flex flex-col md:flex-row gap-6">
               
               {/* Pie Chart: Status Breakdown */}
-              <div className="flex-1 bg-surface-container-low border border-outline-variant rounded-lg p-4 flex flex-col items-center">
-                <h3 className="text-sm font-bold text-on-surface mb-2 w-full">Execution Status</h3>
+              <div className="flex-1 rounded-lg p-4 flex flex-col items-center" style={{ background: '#f0ece0', border: '1px solid #2e2820' }}>
+                <h3 className="text-sm font-bold mb-2 w-full" style={{ color: '#1a1410' }}>Execution Status</h3>
                 <div className="w-full h-[200px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
@@ -145,8 +145,8 @@ export default function Dashboard() {
               </div>
 
               {/* Bar Chart: Daily Activity */}
-              <div className="flex-1 bg-surface-container-low border border-outline-variant rounded-lg p-4 flex flex-col items-center">
-                <h3 className="text-sm font-bold text-on-surface mb-2 w-full">Activity (Recent)</h3>
+              <div className="flex-1 rounded-lg p-4 flex flex-col items-center" style={{ background: '#f0ece0', border: '1px solid #2e2820' }}>
+                <h3 className="text-sm font-bold mb-2 w-full" style={{ color: '#1a1410' }}>Activity (Recent)</h3>
                 <div className="w-full h-[200px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={activityData}>
@@ -167,14 +167,14 @@ export default function Dashboard() {
         </div>
 
         {/* Settings Panel */}
-        <div className="p-6 border border-outline-variant bg-surface-container rounded-xl">
-          <h2 className="text-lg font-bold text-on-surface mb-4">Automation Settings</h2>
+        <div className="p-6 bg-surface-container rounded-xl" style={{ border: '1px solid #2e2820' }}>
+          <h2 className="text-lg font-bold mb-4" style={{ color: '#1a1410' }}>Automation Settings</h2>
           <div className="flex flex-col gap-2 max-w-md">
-            <label className="text-sm font-bold text-on-surface flex justify-between">
+            <label className="text-sm font-bold flex justify-between" style={{ color: '#1a1410' }}>
               Approval Threshold
-              <span className="text-primary">{threshold}</span>
+              <span style={{ color: '#c9a84c' }}>{threshold}</span>
             </label>
-            <p className="text-xs text-secondary mb-2" title="Any planning confidence below this threshold will require your manual approval before execution.">
+            <p className="text-xs mb-2" style={{ color: '#7a7060' }} title="Any planning confidence below this threshold will require your manual approval before execution.">
               Any step below this confidence score will require manual approval before execution. Lower values mean less human interruption.
             </p>
             <div className="flex items-center gap-4">
@@ -185,9 +185,10 @@ export default function Dashboard() {
                 step="0.05"
                 value={threshold} 
                 onChange={(e) => setThreshold(parseFloat(e.target.value))}
-                className="flex-1 cursor-pointer accent-primary" 
+                className="flex-1 cursor-pointer" 
+                style={{ accentColor: '#c9a84c' }}
               />
-              <button onClick={handleSaveThreshold} className="px-4 py-2 bg-primary/20 hover:bg-primary/40 text-primary font-bold text-xs rounded transition flex-shrink-0">
+              <button onClick={handleSaveThreshold} className="px-4 py-2 font-bold text-xs rounded transition flex-shrink-0" style={{ background: '#1a1410', color: '#f0ece0' }}>
                 Save
               </button>
             </div>
@@ -195,8 +196,8 @@ export default function Dashboard() {
         </div>
 
         {/* Executions Panel */}
-        <div className="p-6 border border-outline-variant bg-surface-container rounded-xl">
-          <h2 className="text-lg font-bold text-on-surface mb-4">Recent Executions</h2>
+        <div className="p-6 bg-surface-container rounded-xl" style={{ border: '1px solid #2e2820' }}>
+          <h2 className="text-lg font-bold mb-4" style={{ color: '#1a1410' }}>Recent Executions</h2>
           
           <div className="space-y-3 mt-4">
             {history.length === 0 ? (

@@ -65,13 +65,13 @@ export default function Chatbot() {
             right: '20px',
             width: '360px',
             maxHeight: '500px',
-            background: '#1C1B1B',
-            border: '0.5px solid #414755',
+            background: '#f0ece0',
+            border: '1px solid #d0c9bc',
             borderRadius: '12px',
             display: 'flex',
             flexDirection: 'column',
             zIndex: 9999,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
             overflow: 'hidden',
           }}
         >
@@ -79,15 +79,16 @@ export default function Chatbot() {
           <div
             style={{
               padding: '12px 16px',
-              borderBottom: '0.5px solid #414755',
+              borderBottom: '1px solid #d0c9bc',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
+              background: '#e8e2d8'
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ fontSize: '16px' }}>⚡</span>
-              <span style={{ fontSize: '13px', fontWeight: 700, color: '#E5E2E1' }}>
+              <span style={{ fontSize: '13px', fontWeight: 700, color: '#1a1410' }}>
                 MCP Assistant
               </span>
             </div>
@@ -96,7 +97,7 @@ export default function Chatbot() {
               style={{
                 background: 'transparent',
                 border: 'none',
-                color: '#6C757D',
+                color: '#7a7060',
                 fontSize: '18px',
                 cursor: 'pointer',
                 lineHeight: 1,
@@ -116,6 +117,7 @@ export default function Chatbot() {
               flexDirection: 'column',
               gap: '10px',
               maxHeight: '350px',
+              background: '#f0ece0'
             }}
           >
             {messages.map((msg, i) => (
@@ -126,11 +128,11 @@ export default function Chatbot() {
                   maxWidth: '85%',
                   padding: '8px 12px',
                   borderRadius: msg.role === 'user' ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
-                  background: msg.role === 'user' ? '#007AFF' : '#0E0E0E',
-                  color: msg.role === 'user' ? '#F9F9F9' : '#C1C6D7',
+                  background: msg.role === 'user' ? '#c9a84c' : '#e8e2d8',
+                  color: msg.role === 'user' ? '#0d0b09' : '#1a1410',
                   fontSize: '12px',
                   lineHeight: '1.5',
-                  border: msg.role === 'user' ? 'none' : '0.5px solid #414755',
+                  border: msg.role === 'user' ? 'none' : '1px solid #d0c9bc',
                   whiteSpace: 'pre-wrap',
                   wordBreak: 'break-word',
                 }}
@@ -144,9 +146,9 @@ export default function Chatbot() {
                   alignSelf: 'flex-start',
                   padding: '8px 12px',
                   borderRadius: '12px 12px 12px 2px',
-                  background: '#0E0E0E',
-                  border: '0.5px solid #414755',
-                  color: '#6C757D',
+                  background: '#e8e2d8',
+                  border: '1px solid #d0c9bc',
+                  color: '#7a7060',
                   fontSize: '12px',
                 }}
               >

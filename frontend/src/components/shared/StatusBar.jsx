@@ -14,35 +14,25 @@ export default function StatusBar() {
   const total = steps.length;
 
   const statusColorMap = {
-    idle: 'text-secondary',
-    planning: 'text-primary',
-    running: 'text-primary',
-    awaiting_approval: 'text-tertiary',
-    completed: 'text-success',
-    failed: 'text-error',
+    idle: '#9a9080',
+    planning: '#c9a84c',
+    running: '#c9a84c',
+    awaiting_approval: '#b8860b',
+    completed: '#2e7d52',
+    failed: '#c0392b',
   };
 
-  const statusMessages = {
-    idle: 'Ready',
-    planning: 'Planning workflow...',
-    running: running
-      ? `Executing ${running.connector}.${running.action}`
-      : 'Running...',
-    awaiting_approval: 'Awaiting approval...',
-    completed: 'All steps completed',
-    failed: `Workflow failed (${failed} error${failed !== 1 ? 's' : ''})`,
-  };
-
-  const colorClass = statusColorMap[status] || 'text-secondary';
+  const statusColor = statusColorMap[status] || '#9a9080';
 
   if (total === 0 && status === 'idle') {
     return (
       <footer
         id="statusbar"
-        className="h-[32px] bg-surface-container-high border-t border-[0.5px] border-outline-variant/20 flex items-center justify-between px-4 text-[11px] flex-shrink-0"
+        className="h-[32px] flex items-center justify-between px-5 text-[11px] flex-shrink-0 border-t"
+        style={{ background: '#f0ece0', borderColor: '#d0c9bc', fontFamily: "'JetBrains Mono', monospace", color: '#9a9080' }}
       >
-        <span className="text-secondary">Ready — enter a workflow prompt to begin</span>
-        <span className="text-secondary font-mono">v1.0.0</span>
+        <span>Ready — enter a workflow prompt to begin</span>
+        <span>v1.0.0</span>
       </footer>
     );
   }
@@ -50,15 +40,16 @@ export default function StatusBar() {
   return (
     <footer
       id="statusbar"
-      className="h-[32px] bg-surface-container-high border-t border-[0.5px] border-outline-variant/20 flex items-center justify-between px-4 text-[11px] flex-shrink-0"
+      className="h-[32px] flex items-center justify-between px-5 text-[11px] flex-shrink-0 border-t"
+      style={{ background: '#f0ece0', borderColor: '#d0c9bc', fontFamily: "'JetBrains Mono', monospace" }}
     >
-      <span className={colorClass}>
+      <span style={{ color: statusColor }}>
         {total > 0 && status !== 'idle' && status !== 'planning'
           ? `Step ${completed + (running ? 1 : 0)} of ${total} — `
           : ''}
         {statusMessages[status]}
       </span>
-      <span className={`font-mono tabular-nums ${colorClass}`}>
+      <span style={{ color: statusColor }}>
         {total > 0 ? `${completed} / ${total} DONE` : ''}
       </span>
     </footer>

@@ -72,24 +72,26 @@ export default function TopBar({ onLogout }) {
   return (
     <header
       id="topbar"
-      className="h-[44px] bg-surface-container-high border-b border-[0.5px] border-outline-variant/20 flex items-center justify-between px-4 flex-shrink-0 select-none"
+      className="h-[48px] border-b flex items-center justify-between px-5 flex-shrink-0 select-none"
+      style={{ background: '#181410', borderColor: '#2e2820' }}
     >
       {/* Brand */}
-      <div className="flex items-center gap-2.5">
-        <div className="w-6 h-6 rounded-md bg-primary/20 flex items-center justify-center">
-          <span className="material-symbols-outlined text-[16px] text-primary">
-            bolt
-          </span>
+      <div className="flex items-center gap-3">
+        <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: '#c9a84c' }}>
+          <span className="text-[14px] font-bold" style={{ color: '#0d0b09' }}>M</span>
         </div>
-        <span className="text-[16px] font-bold text-on-surface tracking-tight">
+        <span className="text-[14px] font-semibold" style={{ color: '#f0ece0', fontFamily: "'DM Sans', sans-serif" }}>
           MCP Gateway
+        </span>
+        <span className="text-[10px] px-2 py-0.5 rounded-sm" style={{ color: '#9a9080', border: '1px solid #2e2820', fontFamily: "'JetBrains Mono', monospace" }}>
+          v1.0
         </span>
       </div>
 
       {/* Right: connector links + status + logout */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-6">
         {/* Connector icons — clickable external links */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           {connectors.map(({ key, label, url, icon }) => (
             <a
               key={key}
@@ -100,12 +102,12 @@ export default function TopBar({ onLogout }) {
               title={`${label}: ${health[key]?.configured ? 'Connected' : 'Not configured'} — Click to open`}
               style={{ textDecoration: 'none', color: 'inherit' }}
             >
-              <span className="text-secondary group-hover:text-on-surface-variant transition-colors">
+              <span style={{ color: '#9a9080', transition: 'color 0.2s' }} className="group-hover:opacity-100 opacity-70">
                 {icon}
               </span>
               <span
-                className={`w-[6px] h-[6px] rounded-full ${
-                  health[key]?.configured ? 'bg-success' : 'bg-error'
+                className={`w-[7px] h-[7px] rounded-full ${
+                  health[key]?.configured ? 'bg-green-500' : 'bg-red-500'
                 }`}
               />
             </a>
@@ -114,20 +116,20 @@ export default function TopBar({ onLogout }) {
 
         {/* Status badges */}
         {isRunning && (
-          <div className="bg-surface-container-highest px-2.5 py-0.5 rounded text-[11px] font-medium text-primary flex items-center gap-1.5">
-            <span className="w-[6px] h-[6px] rounded-full bg-primary animate-pulse" />
+          <div className="px-3 py-1 rounded text-[12px] font-medium flex items-center gap-2" style={{ background: 'rgba(201, 168, 76, 0.15)', color: '#c9a84c', fontFamily: "'JetBrains Mono', monospace" }}>
+            <span className="w-[6px] h-[6px] rounded-full animate-pulse" style={{ background: '#c9a84c' }} />
             {statusLabel}
           </div>
         )}
         {status === 'completed' && (
-          <div className="bg-surface-container-highest px-2.5 py-0.5 rounded text-[11px] font-medium text-success flex items-center gap-1.5">
-            <span className="w-[6px] h-[6px] rounded-full bg-success" />
+          <div className="px-3 py-1 rounded text-[12px] font-medium flex items-center gap-2" style={{ background: 'rgba(46, 125, 82, 0.15)', color: '#2e7d52', fontFamily: "'JetBrains Mono', monospace" }}>
+            <span className="w-[6px] h-[6px] rounded-full" style={{ background: '#2e7d52' }} />
             Done
           </div>
         )}
         {status === 'failed' && (
-          <div className="bg-surface-container-highest px-2.5 py-0.5 rounded text-[11px] font-medium text-error flex items-center gap-1.5">
-            <span className="w-[6px] h-[6px] rounded-full bg-error" />
+          <div className="px-3 py-1 rounded text-[12px] font-medium flex items-center gap-2" style={{ background: 'rgba(192, 57, 43, 0.15)', color: '#e57373', fontFamily: "'JetBrains Mono', monospace" }}>
+            <span className="w-[6px] h-[6px] rounded-full" style={{ background: '#e57373' }} />
             Failed
           </div>
         )}
@@ -136,8 +138,8 @@ export default function TopBar({ onLogout }) {
         {onLogout && (
           <button
             onClick={onLogout}
-            className="text-[11px] px-2 py-1 rounded hover:bg-surface-container-highest transition-colors"
-            style={{ color: '#6C757D', background: 'transparent', border: 'none', cursor: 'pointer' }}
+            className="text-[12px] px-3 py-1.5 rounded hover:opacity-100 transition-opacity"
+            style={{ color: '#9a9080', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}
             title="Sign out"
           >
             Logout
