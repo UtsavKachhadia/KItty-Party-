@@ -112,11 +112,38 @@ export async function runDAG(run, io, user) {
           continue;
         }
 
-        // Approved — continue execution
+      // Approved — continue execution
         await Run.updateOne(
           { _id: run._id },
           { $set: { status: 'running' } }
         );
+      }
+
+      // ── Dependency Check ──
+      // If any step this step depends on did not complete successfully, SKIP this step.
+      let depsFailed = false;
+      if (step.dependsOn && step.dependsOn.length > 0) {
+        for (const depId of step.dependsOn) {
+          const depStep = stepMap[depId];
+          if (!depStep || depStep.status !== 'completed') {
+            depsFailed = true;
+            break;
+          }
+        }
+      }
+
+      if (depsFailed) {
+        step.status = 'skipped';
+        step.error = 'Dependency failed or was skipped';
+        step.endedAt = new Date();
+        allSucceeded = false;
+        
+        await Run.updateOne(
+          { _id: run._id, 'steps.id': stepId },
+          { $set: { 'steps.$.status': 'skipped', 'steps.$.error': step.error, 'steps.$.endedAt': step.endedAt } }
+        );
+        emitStepFailed(io, runId, stepId, 'Skipped due to dependency failure', null);
+        continue;
       }
 
       // ── Execute step via connector ──
@@ -150,7 +177,53 @@ export async function runDAG(run, io, user) {
       }
 
       const startTime = Date.now();
-      const result = await connector.execute(step.action, step.params, user);
+
+      // ── Interpolate results from dependency steps into this step's params ──
+      // If this step depends on previous steps, inject their results into params
+      const interpolatedParams = { ...(step.params || {}) };
+      if (step.dependsOn && step.dependsOn.length > 0) {
+        for (const depId of step.dependsOn) {
+          const depStep = stepMap[depId];
+          if (!depStep || !depStep.result) continue;
+
+          // Auto-wire: lookupChannel result → postMessage/mentionUser channel param
+          if (depStep.action === 'lookupChannel' && depStep.result.channelId) {
+            if (['postMessage', 'mentionUser'].includes(step.action)) {
+              interpolatedParams.channel = depStep.result.channelId;
+            }
+          }
+
+          // Auto-wire: getUser result → mentionUser userId param
+          if (depStep.action === 'getUser' && depStep.result.userId) {
+            if (step.action === 'mentionUser') {
+              interpolatedParams.userId = depStep.result.userId;
+            }
+          }
+
+          // Auto-wire: createRepo result → createIssue/createPR owner/repo params
+          if (depStep.action === 'createRepo' && depStep.result) {
+            if (['createIssue', 'createPR', 'listIssues'].includes(step.action)) {
+              if (depStep.result.owner) interpolatedParams.owner = depStep.result.owner;
+              if (depStep.result.name) interpolatedParams.repo = depStep.result.name;
+            }
+          }
+
+          // Generic: make all dep results available for string interpolation
+          // Replace {{step_N.fieldName}} patterns in string param values
+          for (const [key, val] of Object.entries(interpolatedParams)) {
+            if (typeof val === 'string' && val.includes(`{{${depId}.`)) {
+              for (const [rKey, rVal] of Object.entries(depStep.result)) {
+                interpolatedParams[key] = interpolatedParams[key].replace(
+                  `{{${depId}.${rKey}}}`,
+                  String(rVal)
+                );
+              }
+            }
+          }
+        }
+      }
+
+      const result = await connector.execute(step.action, interpolatedParams, user);
       const durationMs = Date.now() - startTime;
 
       // ── Audit log ──

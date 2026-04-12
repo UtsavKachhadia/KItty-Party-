@@ -19,7 +19,21 @@ const handlers = {
   },
 
   async postMessage(web, { channel, text, blocks }) {
-    const args = { channel, text };
+    let resolvedChannel = channel;
+
+    // If channel starts with #, try to resolve it to an ID first
+    if (typeof channel === 'string' && channel.startsWith('#')) {
+      const cleanName = channel.replace(/^#/, '');
+      try {
+        const lookup = await handlers.lookupChannel(web, { name: cleanName });
+        resolvedChannel = lookup.channelId;
+      } catch {
+        // If lookup fails, just pass the name directly — Slack sometimes accepts it
+        resolvedChannel = cleanName;
+      }
+    }
+
+    const args = { channel: resolvedChannel, text };
     if (blocks) args.blocks = blocks;
     const res = await web.chat.postMessage(args);
     return { ts: res.ts, channel: res.channel };
@@ -27,18 +41,53 @@ const handlers = {
 
   async mentionUser(web, { channel, userId, text }) {
     const mentionText = `<@${userId}> ${text}`;
-    const res = await web.chat.postMessage({ channel, text: mentionText });
-    return { ts: res.ts, channel: res.channel };
+    // Reuse the smart channel resolution from postMessage
+    const result = await handlers.postMessage(web, { channel, text: mentionText });
+    return result;
   },
 
   async lookupChannel(web, { name }) {
     const cleanName = name.replace(/^#/, '');
-    const res = await web.conversations.list({ types: 'public_channel,private_channel', limit: 200 });
-    const ch = (res.channels || []).find(
-      (c) => c.name === cleanName || c.name_normalized === cleanName
-    );
-    if (!ch) throw new Error(`Channel "${name}" not found`);
-    return { channelId: ch.id, name: ch.name };
+    
+    // Try public channels first (only needs channels:read)
+    try {
+      let cursor;
+      do {
+        const res = await web.conversations.list({
+          types: 'public_channel',
+          limit: 200,
+          cursor: cursor || undefined
+        });
+        const ch = (res.channels || []).find(
+          (c) => c.name === cleanName || c.name_normalized === cleanName
+        );
+        if (ch) return { channelId: ch.id, name: ch.name };
+        cursor = res.response_metadata?.next_cursor;
+      } while (cursor);
+    } catch (err) {
+      console.warn(`[Slack] Public channel list failed: ${err.message}`);
+    }
+
+    // Try including private channels (needs groups:read)
+    try {
+      let cursor;
+      do {
+        const res = await web.conversations.list({
+          types: 'public_channel,private_channel',
+          limit: 200,
+          cursor: cursor || undefined
+        });
+        const ch = (res.channels || []).find(
+          (c) => c.name === cleanName || c.name_normalized === cleanName
+        );
+        if (ch) return { channelId: ch.id, name: ch.name };
+        cursor = res.response_metadata?.next_cursor;
+      } while (cursor);
+    } catch (err) {
+      console.warn(`[Slack] Private channel list failed (likely missing groups:read scope): ${err.message}`);
+    }
+
+    throw new Error(`Channel "${name}" not found. Make sure the bot is added to the channel and has channels:read scope.`);
   },
 
   async getUser(web, { email }) {

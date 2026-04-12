@@ -6,26 +6,43 @@ import { buildDAGFromJSON } from '../utils/dagUtils.js';
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const MODEL = 'llama-3.3-70b-versatile';
 
+const FALLBACK_MODELS = [
+  'llama-3.3-70b-versatile',
+  'llama-3.1-8b-instant'
+];
+
 /**
- * Helper to make a POST request with exponential backoff for 429 errors.
+ * Helper to make a POST request with model fallback and exponential backoff for 429 errors.
+ * Groq applies rate-limits per model. If one hits 429, we seamlessly fall back to another.
  */
-async function axiosPostWithRetry(url, data, config, maxRetries = 3) {
-  let attempt = 0;
-  while (attempt < maxRetries) {
-    try {
-      return await axios.post(url, data, config);
-    } catch (err) {
-      if (err.response?.status === 429 && attempt < maxRetries - 1) {
-        attempt++;
-        // Exponential backoff: 2s, 4s, etc.
-        const delayMs = Math.pow(2, attempt) * 1000; 
-        console.warn(`[LLM Rate Limit] 429 from Groq. Retrying attempt ${attempt}/${maxRetries-1} in ${delayMs/1000}s...`);
-        await new Promise(resolve => setTimeout(resolve, delayMs));
-        continue;
+async function axiosPostWithRetry(url, data, config) {
+  for (const model of FALLBACK_MODELS) {
+    data.model = model; // Swap the model dynamically
+    let internalAttempt = 0;
+    
+    while (internalAttempt < 2) {
+      try {
+        return await axios.post(url, data, config);
+      } catch (err) {
+        if (err.response?.status === 429) {
+          internalAttempt++;
+          if (internalAttempt < 2) {
+            const delayMs = 2000; 
+            console.warn(`[LLM Rate Limit] 429 for ${model}. Retrying in ${delayMs/1000}s...`);
+            await new Promise(resolve => setTimeout(resolve, delayMs));
+          } else {
+            console.warn(`[LLM Rate Limit] Exhausted retries for ${model}. Falling back to next model...`);
+          }
+        } else {
+          throw err;
+        }
       }
-      throw err;
     }
   }
+
+  const rateLimitErr = new Error('Groq rate limit exceeded across all fallback models after multiple retries.');
+  rateLimitErr.status = 429;
+  throw rateLimitErr;
 }
 
 /**
@@ -45,6 +62,7 @@ export async function planWorkflow(userInput) {
         ],
         temperature: 0.2,
         max_tokens: 4096,
+        response_format: { type: 'json_object' },
       },
       {
         headers: {
@@ -67,9 +85,21 @@ export async function planWorkflow(userInput) {
     try {
       parsed = JSON.parse(content);
     } catch (parseErr) {
-      throw new Error(
-        `Failed to parse LLM response as JSON: ${parseErr.message}\nRaw content: ${content.substring(0, 500)}`
-      );
+      // Fallback: try to extract the first JSON object from the response
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        try {
+          parsed = JSON.parse(jsonMatch[0]);
+        } catch {
+          throw new Error(
+            `Failed to parse LLM response as JSON: ${parseErr.message}\nRaw content: ${content.substring(0, 500)}`
+          );
+        }
+      } else {
+        throw new Error(
+          `Failed to parse LLM response as JSON: ${parseErr.message}\nRaw content: ${content.substring(0, 500)}`
+        );
+      }
     }
 
     const dag = buildDAGFromJSON(parsed);

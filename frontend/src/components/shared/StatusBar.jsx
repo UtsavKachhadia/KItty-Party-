@@ -22,6 +22,15 @@ export default function StatusBar() {
     failed: '#c0392b',
   };
 
+  const statusMessages = {
+    idle: 'Ready',
+    planning: 'Planning...',
+    running: 'Executing...',
+    awaiting_approval: 'Awaiting approval...',
+    completed: 'Completed successfully',
+    failed: 'Failed'
+  };
+
   const statusColor = statusColorMap[status] || '#9a9080';
 
   if (total === 0 && status === 'idle') {

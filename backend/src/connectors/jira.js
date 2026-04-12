@@ -13,7 +13,13 @@ function getJiraClient(context) {
     throw new Error('Jira credentials not configured for this user');
   }
 
-  const email = context?.email;
+  let email = context?.tokens?.jira?.email || context?.email;
+  
+  // Enterprise Override: If the user provides a direct JIRA_EMAIL in .env, honor it over the KItty-Party login email
+  if (process.env.JIRA_EMAIL && process.env.NODE_ENV === 'development') {
+    email = process.env.JIRA_EMAIL;
+  }
+
   if (!email) {
     throw new Error('User email required for Jira authentication');
   }
