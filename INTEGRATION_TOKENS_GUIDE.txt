@@ -18,6 +18,7 @@ This guide explains how to obtain the required tokens for integrating your accou
 6. Click **"Generate token"** at the bottom.
 7. **Copy the token** and save it securely. You will not be able to see it again!
 8. Paste this token into the MCP Gateway when connecting your GitHub account.
+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
 
 ---
 
