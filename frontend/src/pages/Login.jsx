@@ -38,44 +38,52 @@ export default function Login({ onLoginSuccess, onGoToSignup }) {
   };
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden font-sans" style={{ background: '#131313' }}>
+    <div className="flex h-screen w-screen overflow-hidden" style={{ background: '#1a1410', fontFamily: "'DM Sans', sans-serif" }}>
 
       {/* ═══ LEFT PANEL — Brand / Terminal ═══ */}
       <div
-        className="hidden md:flex flex-col justify-between w-[60%] h-full p-12"
-        style={{ background: '#1C1B1B' }}
+        className="hidden md:flex flex-col justify-between w-[55%] h-full p-[60px]"
+        style={{ background: '#1a1410' }}
       >
+        {/* Background gradient */}
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'radial-gradient(ellipse at 20% 50%, rgba(201, 168, 76, 0.06) 0%, transparent 60%)',
+          pointerEvents: 'none'
+        }} />
+
         {/* Brand block */}
-        <div className="flex-1 flex flex-col justify-center">
+        <div className="flex-1 flex flex-col justify-center relative z-10">
           <p
             className="text-[11px] font-bold uppercase"
-            style={{ color: '#6C757D', letterSpacing: '0.2em' }}
+            style={{ color: '#9a9080', letterSpacing: '0.2em', fontFamily: "'JetBrains Mono', monospace" }}
           >
             MCP Gateway
           </p>
           <h1
-            className="text-[36px] font-bold leading-tight mt-2"
-            style={{ color: '#E5E2E1' }}
+            className="text-[64px] leading-[1.05] mt-5 font-italic"
+            style={{ color: '#f0ece0', fontFamily: "'Playfair Display', serif" }}
           >
             Agentic workflow<br />execution.
           </h1>
 
           {/* Terminal block */}
           <div
-            className="mt-6 rounded-lg p-4 font-mono text-[11px] leading-relaxed"
-            style={{ background: '#0E0E0E', border: '0.5px solid #414755' }}
+            className="mt-12 rounded-lg p-6 text-[13px] leading-[1.8]"
+            style={{ background: '#0d0b09', border: '1px solid #2e2820', maxWidth: '520px', fontFamily: "'JetBrains Mono', monospace" }}
           >
-            <p style={{ color: '#6C757D' }}>&gt; Initializing MCP runtime...</p>
-            <p style={{ color: '#28A745' }}>✓ GitHub connector: ACTIVE</p>
-            <p style={{ color: '#28A745' }}>✓ Slack connector: ACTIVE</p>
-            <p style={{ color: '#FFBF00' }}>⚠ Jira connector: CHECKING</p>
-            <p style={{ color: '#6C757D' }}>&gt; Loading workflow engine...</p>
-            <p style={{ color: '#6C757D' }}>
+            <p style={{ color: '#9a9080' }}>&gt; Initializing MCP runtime...</p>
+            <p style={{ color: '#4ade80' }}>✓ GitHub connector: ACTIVE</p>
+            <p style={{ color: '#4ade80' }}>✓ Slack connector: ACTIVE</p>
+            <p style={{ color: '#c9a84c' }}>⚠ Jira connector: CHECKING</p>
+            <p style={{ color: '#9a9080' }}>&gt; Loading workflow engine...</p>
+            <p style={{ color: '#9a9080' }}>
               &gt; Awaiting authentication...
               <span
                 className="ml-0.5 inline-block"
                 style={{
-                  color: '#007AFF',
+                  color: '#c9a84c',
                   animation: 'blink 1s step-end infinite',
                 }}
               >
@@ -86,40 +94,40 @@ export default function Login({ onLoginSuccess, onGoToSignup }) {
         </div>
 
         {/* Version */}
-        <p className="text-[10px]" style={{ color: '#6C757D' }}>
+        <p className="text-[11px] relative z-10" style={{ color: '#4a4238', letterSpacing: '0.05em', fontFamily: "'JetBrains Mono', monospace" }}>
           v1.0.4-stable
         </p>
       </div>
 
       {/* ═══ RIGHT PANEL — Login Form ═══ */}
       <div
-        className="flex-1 flex items-center justify-center px-6 md:px-12"
-        style={{ background: '#131313' }}
+        className="flex-1 flex items-center justify-center px-8 md:px-16"
+        style={{ background: '#f0ece0' }}
       >
-        <div className="w-full max-w-[400px]">
+        <div className="w-full max-w-[420px]">
 
           {/* Header */}
           <p
             className="text-[11px] font-bold uppercase"
-            style={{ color: '#6C757D', letterSpacing: '0.2em' }}
+            style={{ color: '#3d3628', letterSpacing: '0.15em', fontFamily: "'JetBrains Mono', monospace" }}
           >
-            MCP Gateway
+            Workspace Login
           </p>
           <h2
-            className="text-[16px] font-bold mt-2"
-            style={{ color: '#E5E2E1' }}
+            className="text-[40px] leading-[1.2] mt-6 font-italic"
+            style={{ color: '#1a1410', fontFamily: "'Playfair Display', serif" }}
           >
             Sign in to continue
           </h2>
 
           {/* Form */}
-          <form onSubmit={handleLogin} className="mt-8" id="login-form">
+          <form onSubmit={handleLogin} className="mt-12" id="login-form">
 
             {/* Email */}
-            <div>
+            <div className="mb-6">
               <label
-                className="block text-[11px] uppercase tracking-wider font-semibold mb-1.5"
-                style={{ color: '#C1C6D7' }}
+                className="block text-[11px] uppercase tracking-wider font-semibold mb-2.5"
+                style={{ color: '#3d3628', fontFamily: "'JetBrains Mono', monospace" }}
               >
                 Workspace Email
               </label>
@@ -129,18 +137,19 @@ export default function Login({ onLoginSuccess, onGoToSignup }) {
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}
                 placeholder="you@company.com"
-                className="w-full h-[36px] rounded-lg px-3 text-[13px] font-sans outline-none disabled:opacity-50"
+                className="w-full h-[44px] rounded-lg px-4 text-[14px] outline-none disabled:opacity-50"
                 style={{
-                  background: '#0E0E0E',
-                  color: '#E5E2E1',
-                  border: `0.5px solid ${authError ? '#DC3545' : '#414755'}`,
+                  background: '#dad3bd',
+                  color: '#1a1410',
+                  border: `1px solid ${authError ? '#c0392b' : '#d0c9bc'}`,
                   transition: 'border-color 120ms ease',
+                  fontFamily: "'DM Sans', sans-serif"
                 }}
                 onFocus={(e) => {
-                  if (!authError) e.target.style.borderColor = '#007AFF';
+                  if (!authError) e.target.style.borderColor = '#3d3628';
                 }}
                 onBlur={(e) => {
-                  if (!authError) e.target.style.borderColor = '#414755';
+                  if (!authError) e.target.style.borderColor = '#d0c9bc';
                 }}
                 id="login-email"
                 autoComplete="email"
@@ -148,8 +157,8 @@ export default function Login({ onLoginSuccess, onGoToSignup }) {
               {/* Error */}
               {authError && (
                 <p
-                  className="mt-1.5 text-[11px] flex items-center gap-1"
-                  style={{ color: '#DC3545' }}
+                  className="mt-2 text-[11px] flex items-center gap-1"
+                  style={{ color: '#c0392b' }}
                 >
                   <span>✗</span> {authError}
                 </p>
@@ -157,18 +166,18 @@ export default function Login({ onLoginSuccess, onGoToSignup }) {
             </div>
 
             {/* Password */}
-            <div className="mt-4">
-              <div className="flex items-center justify-between mb-1.5">
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-2.5">
                 <label
                   className="text-[11px] uppercase tracking-wider font-semibold"
-                  style={{ color: '#C1C6D7' }}
+                  style={{ color: '#3d3628', fontFamily: "'JetBrains Mono', monospace" }}
                 >
                   Password
                 </label>
                 <a
                   href="#"
-                  className="text-[11px] hover:underline"
-                  style={{ color: '#007AFF' }}
+                  className="text-[12px] hover:underline"
+                  style={{ color: '#3d3628' }}
                   tabIndex={0}
                 >
                   Forgot password?
@@ -180,22 +189,23 @@ export default function Login({ onLoginSuccess, onGoToSignup }) {
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={loading}
                 placeholder="••••••••••••"
-                className="w-full h-[36px] rounded-lg px-3 text-[13px] font-sans outline-none disabled:opacity-50"
+                className="w-full h-[44px] rounded-lg px-4 text-[14px] outline-none disabled:opacity-50"
                 style={{
-                  background: '#0E0E0E',
-                  color: '#E5E2E1',
-                  border: '0.5px solid #414755',
+                  background: '#dad3bd',
+                  color: '#1a1410',
+                  border: '1px solid #d0c9bc',
                   transition: 'border-color 120ms ease',
+                  fontFamily: "'DM Sans', sans-serif"
                 }}
-                onFocus={(e) => { e.target.style.borderColor = '#007AFF'; }}
-                onBlur={(e) => { e.target.style.borderColor = '#414755'; }}
+                onFocus={(e) => { e.target.style.borderColor = '#3d3628'; }}
+                onBlur={(e) => { e.target.style.borderColor = '#d0c9bc'; }}
                 id="login-password"
                 autoComplete="current-password"
               />
             </div>
 
             {/* Remember me */}
-            <div className="mt-3 flex items-center gap-2">
+            <div className="mb-8 flex items-center gap-3">
               <input
                 type="checkbox"
                 checked={rememberMe}
@@ -206,19 +216,20 @@ export default function Login({ onLoginSuccess, onGoToSignup }) {
                 style={{
                   appearance: 'none',
                   WebkitAppearance: 'none',
-                  width: '12px',
-                  height: '12px',
-                  border: '0.5px solid #414755',
-                  borderRadius: '3px',
-                  background: rememberMe ? '#007AFF' : '#0E0E0E',
+                  width: '18px',
+                  height: '18px',
+                  border: '1px solid #d0c9bc',
+                  borderRadius: '4px',
+                  background: rememberMe ? '#1a1410' : '#dad3bd',
                   cursor: 'pointer',
                   flexShrink: 0,
+                  accentColor: '#1a1410'
                 }}
               />
               <label
                 htmlFor="login-remember"
-                className="text-[11px] cursor-pointer select-none"
-                style={{ color: '#C1C6D7' }}
+                className="text-[14px] cursor-pointer select-none"
+                style={{ color: '#3d3628', fontFamily: "'DM Sans', sans-serif" }}
               >
                 Keep me signed in
               </label>
@@ -228,12 +239,14 @@ export default function Login({ onLoginSuccess, onGoToSignup }) {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-[36px] rounded-lg font-bold text-[13px] mt-6 flex items-center justify-center disabled:cursor-not-allowed"
+              className="w-full h-[44px] rounded-lg font-semibold text-[16px] flex items-center justify-center disabled:cursor-not-allowed"
               style={{
-                background: '#007AFF',
-                color: '#F9F9F9',
+                background: '#1a1410',
+                color: '#f0ece0',
                 border: 'none',
-                opacity: loading ? 0.7 : 1,
+                fontFamily: "'DM Sans', sans-serif",
+                letterSpacing: '0.02em',
+                opacity: loading ? 0.8 : 1,
                 transition: 'transform 80ms ease, opacity 120ms ease',
               }}
               onMouseDown={(e) => {
@@ -246,8 +259,8 @@ export default function Login({ onLoginSuccess, onGoToSignup }) {
               {loading ? (
                 <svg
                   className="animate-spin"
-                  width="16"
-                  height="16"
+                  width="18"
+                  height="18"
                   viewBox="0 0 24 24"
                   fill="none"
                   style={{ animation: 'spin 0.7s linear infinite' }}
@@ -256,7 +269,7 @@ export default function Login({ onLoginSuccess, onGoToSignup }) {
                     cx="12"
                     cy="12"
                     r="10"
-                    stroke="#F9F9F9"
+                    stroke="#f0ece0"
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeDasharray="15.7 47.1"
@@ -269,17 +282,17 @@ export default function Login({ onLoginSuccess, onGoToSignup }) {
           </form>
 
           {/* Divider */}
-          <div className="relative mt-6 mb-4">
+          <div className="relative mt-8 mb-6">
             <div className="absolute inset-0 flex items-center">
               <div
                 className="w-full"
-                style={{ borderTop: '0.5px solid #414755' }}
+                style={{ borderTop: '1px solid #d0c9bc' }}
               />
             </div>
             <div className="relative flex justify-center">
               <span
-                className="px-2 text-[11px] uppercase"
-                style={{ background: '#131313', color: '#6C757D' }}
+                className="px-3 text-[11px] uppercase"
+                style={{ background: '#f0ece0', color: '#7a7060', fontFamily: "'JetBrains Mono', monospace" }}
               >
                 Or continue with
               </span>
@@ -290,14 +303,15 @@ export default function Login({ onLoginSuccess, onGoToSignup }) {
           <button
             type="button"
             disabled={loading}
-            className="w-full h-[36px] rounded-lg text-[13px] font-sans flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full h-[44px] rounded-lg text-[15px] flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
             style={{
               background: 'transparent',
-              color: '#E5E2E1',
-              border: '0.5px solid #414755',
+              color: '#3d3628',
+              border: '1px solid #d0c9bc',
               transition: 'background 120ms ease',
+              fontFamily: "'DM Sans', sans-serif"
             }}
-            onMouseOver={(e) => { e.currentTarget.style.background = '#2A2A2A'; }}
+            onMouseOver={(e) => { e.currentTarget.style.background = '#dad3bd'; }}
             onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; }}
             id="login-sso-btn"
           >
@@ -306,18 +320,18 @@ export default function Login({ onLoginSuccess, onGoToSignup }) {
 
           {/* Footer */}
           <div className="mt-8">
-            <p className="text-[11px]" style={{ color: '#6C757D' }}>
+            <p className="text-[13px]" style={{ color: '#7a7060', fontFamily: "'DM Sans', sans-serif" }}>
               Don't have an account?{' '}
               <button
                 type="button"
                 onClick={onGoToSignup}
-                className="hover:underline bg-transparent border-none cursor-pointer p-0"
-                style={{ color: '#007AFF', font: 'inherit' }}
+                className="hover:underline bg-transparent border-none cursor-pointer p-0 font-semibold"
+                style={{ color: '#3d3628', font: 'inherit' }}
               >
                 Sign up
               </button>
             </p>
-            <p className="text-[10px] mt-2" style={{ color: '#414755' }}>
+            <p className="text-[11px] mt-2" style={{ color: '#b0a898', fontFamily: "'JetBrains Mono', monospace" }}>
               Tokens stored in secure enclave. Not transmitted.
             </p>
           </div>

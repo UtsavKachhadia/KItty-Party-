@@ -17,19 +17,22 @@ export default function RightPanel() {
   return (
     <div
       id="right-panel"
-      className="w-[280px] bg-surface-container-low border-l border-[0.5px] border-outline-variant/20 flex flex-col flex-shrink-0 overflow-hidden"
+      className="w-[280px] flex flex-col flex-shrink-0 overflow-hidden border-l"
+      style={{ background: '#f0ece0', borderColor: '#d0c9bc' }}
     >
       {/* Tab bar */}
-      <div className="flex border-b border-[0.5px] border-outline-variant/20 flex-shrink-0">
+      <div className="flex flex-shrink-0 border-b" style={{ borderColor: '#d0c9bc' }}>
         {tabs.map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`flex-1 py-2.5 text-center text-[11px] font-bold uppercase tracking-wider cursor-pointer transition-colors ${
-              activeTab === tab
-                ? 'text-primary border-b-2 border-primary'
-                : 'text-secondary hover:text-on-surface-variant'
-            }`}
+            className={`flex-1 py-3 text-center text-[11px] font-bold uppercase tracking-wider cursor-pointer transition-colors border-b-2`}
+            style={{
+              borderBottomColor: activeTab === tab ? '#c9a84c' : 'transparent',
+              color: activeTab === tab ? '#c9a84c' : '#7a7060',
+              fontFamily: "'JetBrains Mono', monospace",
+              background: 'transparent'
+            }}
             id={`tab-${tab}`}
           >
             {tab}
@@ -38,7 +41,7 @@ export default function RightPanel() {
       </div>
 
       {/* Tab content */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto" style={{ background: '#f0ece0' }}>
         {activeTab === 'steps' && <StepsTab />}
         {activeTab === 'console' && <ConsoleTab />}
         {activeTab === 'json' && <JsonTab />}

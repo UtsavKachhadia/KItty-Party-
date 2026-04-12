@@ -34,14 +34,14 @@ export default function AppShell({ onLogout }) {
   };
 
   return (
-    <div className="h-screen w-screen overflow-hidden bg-surface font-sans text-[13px] text-on-surface flex flex-col">
+    <div className="h-screen w-screen overflow-hidden flex flex-col" style={{ background: '#f0ece0', fontFamily: "'DM Sans', sans-serif", fontSize: '14px', color: '#1a1410' }}>
       {/* Top bar */}
       <TopBar onLogout={onLogout} />
 
       {/* Body: sidebar + main content */}
       <div className="flex flex-1 overflow-hidden">
         <Sidebar />
-        <main className="flex-1 overflow-hidden bg-surface">
+        <main className="flex-1 overflow-hidden" style={{ background: '#f0ece0' }}>
           {pages[activePage]}
         </main>
       </div>

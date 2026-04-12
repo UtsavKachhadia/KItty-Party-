@@ -82,25 +82,28 @@ export default function NLInputBar() {
   return (
     <div className="w-full relative" id="nl-input-bar">
       {isClarifying && (
-        <div className="absolute top-[-60px] left-0 right-0 p-3 bg-surface-container-high rounded-lg border-[0.5px] border-primary shadow-lg z-10 flex flex-col gap-2">
-          <p className="text-[12px] font-bold text-on-surface">Is this for yourself or someone else?</p>
+        <div className="absolute top-[-80px] left-0 right-0 p-4 rounded-lg border shadow-lg z-10 flex flex-col gap-3" style={{ background: '#e8e2d8', borderColor: '#d0c9bc', fontFamily: "'DM Sans', sans-serif" }}>
+          <p className="text-[12px] font-semibold" style={{ color: '#1a1410', fontFamily: "'JetBrains Mono', monospace" }}>Is this for yourself or someone else?</p>
           {!isThirdParty ? (
             <div className="flex gap-2">
               <button 
                 onClick={() => submitClarification('SELF')}
-                className="bg-primary/20 hover:bg-primary/40 text-primary px-3 py-1 text-[12px] rounded"
+                className="px-4 py-2 text-[12px] rounded font-medium transition-colors"
+                style={{ background: '#1a1410', color: '#f0ece0', fontFamily: "'DM Sans', sans-serif" }}
               >
                 For Me
               </button>
               <button 
                 onClick={() => setIsThirdParty(true)}
-                className="bg-secondary/20 hover:bg-secondary/40 text-on-surface px-3 py-1 text-[12px] rounded"
+                className="px-4 py-2 text-[12px] rounded font-medium transition-colors"
+                style={{ background: 'transparent', color: '#1a1410', border: '1px solid #d0c9bc', fontFamily: "'DM Sans', sans-serif" }}
               >
                 For Someone Else
               </button>
               <button 
                 onClick={() => setIsClarifying(false)}
-                className="ml-auto text-secondary text-[11px] hover:text-on-surface"
+                className="ml-auto text-[11px] hover:underline"
+                style={{ color: '#7a7060', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}
               >
                 Cancel
               </button>
@@ -112,17 +115,20 @@ export default function NLInputBar() {
                 placeholder="Target Username or ID"
                 value={targetUsername}
                 onChange={e => setTargetUsername(e.target.value)}
-                className="bg-surface-container-lowest border-[0.5px] border-outline-variant rounded px-2 py-1 text-[12px] text-on-surface flex-1"
+                className="px-3 py-2 text-[12px] flex-1 rounded outline-none"
+                style={{ background: '#dad3bd', color: '#1a1410', border: '1px solid #d0c9bc', fontFamily: "'DM Sans', sans-serif" }}
               />
               <button 
                 onClick={() => submitClarification('THIRD_PARTY')}
-                className="bg-primary text-on-primary px-3 py-1 text-[12px] rounded hover:brightness-110"
+                className="px-4 py-2 text-[12px] rounded font-medium transition-colors"
+                style={{ background: '#1a1410', color: '#f0ece0', fontFamily: "'DM Sans', sans-serif" }}
               >
                 Confirm
               </button>
               <button 
                 onClick={() => setIsThirdParty(false)}
-                className="text-secondary text-[11px] hover:text-on-surface"
+                className="text-[11px] hover:underline"
+                style={{ color: '#7a7060', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}
               >
                 Back
               </button>
@@ -132,11 +138,12 @@ export default function NLInputBar() {
       )}
 
       <div
-        className={`flex items-center gap-2 p-2 bg-surface-container-high rounded-lg border-[0.5px] ${isClarifying ? 'border-primary' : 'border-outline-variant'} ${
+        className={`flex items-center gap-3 p-4 rounded-lg border transition-colors ${
           shaking ? 'animate-shake' : ''
         }`}
+        style={{ background: '#f0ece0', borderColor: isClarifying ? '#c9a84c' : '#d0c9bc' }}
       >
-        <span className="material-symbols-outlined text-[20px] text-secondary ml-1">
+        <span className="material-symbols-outlined text-[20px]" style={{ color: '#7a7060' }}>
           search
         </span>
 
@@ -147,29 +154,43 @@ export default function NLInputBar() {
           onKeyDown={handleKeyDown}
           disabled={isDisabled || isClarifying}
           placeholder="Describe your workflow..."
-          className="flex-1 bg-surface-container-lowest border-[0.5px] border-outline-variant rounded-lg px-3 py-2 text-[13px] text-on-surface font-mono placeholder:text-secondary focus:outline-none focus:border-primary transition-colors disabled:opacity-50"
+          className="flex-1 rounded-lg px-4 py-3 text-[14px] outline-none transition-colors disabled:opacity-50"
+          style={{
+            background: '#dad3bd',
+            color: '#1a1410',
+            border: '1px solid #d0c9bc',
+            fontFamily: "'JetBrains Mono', monospace",
+          }}
+          onFocus={(e) => { e.target.style.borderColor = '#3d3628'; }}
+          onBlur={(e) => { e.target.style.borderColor = '#d0c9bc'; }}
           id="workflow-input"
         />
 
         <button
           onClick={() => handleSubmit()}
           disabled={isDisabled || isClarifying}
-          className={`rounded-lg font-bold text-[13px] px-5 py-2 transition-all flex items-center gap-2 ${
+          className={`rounded-lg font-bold text-[13px] px-6 py-3 transition-all flex items-center gap-2 ${
             isLoading || isRunning || isClarifying
-              ? 'bg-primary/60 text-on-primary cursor-not-allowed'
-              : 'bg-primary text-on-primary hover:brightness-110 active:scale-[0.97]'
-          } disabled:opacity-50 disabled:cursor-not-allowed`}
+              ? 'opacity-70 cursor-not-allowed'
+              : 'hover:opacity-90 active:scale-[0.97]'
+          }`}
+          style={{
+            background: '#1a1410',
+            color: '#f0ece0',
+            border: 'none',
+            fontFamily: "'JetBrains Mono', monospace",
+          }}
           id="workflow-run-btn"
         >
           {isLoading && (
-            <span className="w-4 h-4 border-2 border-on-primary/30 border-t-on-primary rounded-full animate-spin" />
+            <span className="w-4 h-4 border-2 rounded-full animate-spin" style={{ borderColor: 'rgba(240, 236, 224, 0.3)', borderTopColor: '#f0ece0' }} />
           )}
           {buttonLabel}
         </button>
       </div>
 
       {error && (
-        <p className="text-error text-[11px] mt-1.5 px-2">{error}</p>
+        <p className="text-[11px] mt-2 px-2" style={{ color: '#c0392b', fontFamily: "'DM Sans', sans-serif" }}>{error}</p>
       )}
     </div>
   );
